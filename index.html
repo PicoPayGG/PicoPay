@@ -1,10 +1,9 @@
-@@ -0,0 +1,217 @@
 <!DOCTYPE html>
 <html lang="en" style="scroll-behavior: smooth;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PicoPay Admin Panel Sign In</title>
+    <title>PicoPay | Cheap In-Game Currency & Box Live</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Configure Tailwind for a dark theme with green accents -->
@@ -28,83 +27,647 @@
     <!-- Use Inter font from Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* Custom styles for a glowing effect on the card */
-        .admin-card {
-            box-shadow: 0 0 25px rgba(16, 185, 129, 0.1); /* Subtle green glow */
-        }
+        /* Custom styles for a glowing effect */
         .glow-text {
-            text-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.7); /* accent-green glow */
         }
         .glow-button {
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); /* accent-green glow */
             transition: box-shadow 0.3s ease-in-out, transform 0.1s ease-in-out;
         }
         .glow-button:hover {
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.9);
             transform: translateY(-2px);
         }
-        /* Style for the notification box (reusing logic from main file) */
-        .custom-notification {
-            z-index: 90;
+        /* Style for the hidden modal backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 60;
         }
     </style>
 </head>
-<body class="bg-primary-dark text-text-light font-sans min-h-screen antialiased flex items-center justify-center p-4">
+<body class="bg-primary-dark text-text-light font-sans min-h-screen antialiased">
 
-    <!-- Admin Sign In Container -->
-    <div class="w-full max-w-md">
-        <div class="text-center mb-8">
-            <div class="flex items-center justify-center space-x-2 mb-2">
+    <!-- Header & Navigation -->
+    <header class="bg-secondary-dark/50 backdrop-blur-sm sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <!-- Logo Area -->
+            <div class="flex items-center space-x-2">
                 <img 
                     src="image.png" 
-                    onerror="this.onerror=null;this.src='https://placehold.co/100x50/10b981/ffffff?text=PicoPay'" 
-                    alt="PicoPay Logo" 
-                    class="h-10 rounded-full"
+                    onerror="this.onerror=null;this.src='https://placehold.co/150x50/10b981/ffffff?text=PicoPay'" 
+                    alt="PicoPay Logo - Green Glowing P" 
+                    class="h-8 md:h-10 rounded-full"
                 >
             </div>
-            <h1 class="text-3xl font-bold text-accent-green glow-text">Admin Access</h1>
-            <p class="text-gray-400 mt-2">Enter the Secret Key to access the Panel</p>
+            
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="#products" class="nav-link text-text-light hover:text-accent-green transition duration-300">Products</a>
+                <a href="#features" class="nav-link text-text-light hover:text-accent-green transition duration-300">Why Us?</a>
+                <a href="#contact" class="nav-link text-text-light hover:text-accent-green transition duration-300">Contact</a>
+                
+                <!-- Desktop Cart Button -->
+                <button id="cart-button-desktop" class="relative p-2 text-text-light hover:text-accent-green transition duration-300" onclick="openCartModal()">
+                    <!-- Shopping Cart Icon (Lucide Icon via inline SVG) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
+                    <span id="cart-count-desktop" class="absolute -top-1 -right-1 bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+
+                <a href="#" class="nav-link bg-accent-green text-primary-dark px-4 py-2 rounded-full font-semibold hover:bg-emerald-500 transition duration-300" onclick="handleAuthClick(event)">Sign In</a>
+            </nav>
+
+            <!-- Mobile Menu Button -->
+            <div class="md:hidden flex items-center space-x-4">
+                <!-- Mobile Cart Button -->
+                <button id="cart-button-mobile" class="relative p-2 text-text-light focus:outline-none" onclick="openCartModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
+                    <span id="cart-count-mobile" class="absolute -top-1 -right-1 bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+                
+                <button id="menu-toggle" class="text-text-light focus:outline-none">
+                    <svg class="w-6 h-6" id="menu-icon-open" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    <svg class="w-6 h-6 hidden" id="menu-icon-close" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
         </div>
 
-        <!-- Login Card -->
-        <div class="bg-secondary-dark p-8 rounded-xl admin-card border border-accent-green/30">
-            <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+        <!-- Mobile Menu Drawer - Hidden by default -->
+        <nav id="mobile-menu" class="hidden md:hidden bg-secondary-dark/80 px-4 pb-4 transition-all duration-300 ease-in-out">
+            <a href="#products" class="mobile-nav-link block py-2 text-text-light hover:text-accent-green transition duration-300 border-b border-gray-700">Products</a>
+            <a href="#features" class="mobile-nav-link block py-2 text-text-light hover:text-accent-green transition duration-300 border-b border-gray-700">Why Us?</a>
+            <a href="#contact" class="mobile-nav-link block py-2 text-text-light hover:text-accent-green transition duration-300 border-b border-gray-700">Contact</a>
+            <a href="#" class="mobile-nav-link block mt-4 py-2 bg-accent-green text-primary-dark text-center rounded-lg font-semibold" onclick="handleAuthClick(event)">Sign In</a>
+        </nav>
+
+    </header>
+
+    <main>
+        <!-- 1. Hero Section -->
+        <section class="py-16 md:py-24 text-center">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="text-5xl sm:text-7xl font-extrabold mb-4 leading-tight">
+                    Get <span class="text-accent-green glow-text">More Power</span> for <span class="text-accent-green glow-text">Less Pay</span>.
+                </h1>
+                <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+                    Your ultimate source for super cheap in-game currency and Box Live subscriptions.
+                    Start dominating your favorite games today.
+                </p>
+                <div class="space-y-4 sm:space-y-0 sm:space-x-6">
+                    <a href="#products" class="inline-block px-8 py-3 bg-accent-green text-primary-dark text-lg font-bold rounded-xl glow-button nav-link">
+                        Shop All Deals
+                    </a>
+                    <a href="#features" class="inline-block px-8 py-3 text-text-light text-lg font-bold border-2 border-accent-green rounded-xl hover:bg-accent-green/20 transition duration-300 nav-link">
+                        How It Works
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Products Showcase Section -->
+        <section id="products" class="py-16 bg-secondary-dark/30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-4xl font-bold text-center mb-12 glow-text">Our Best Value Packs</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    
+                    <!-- Product Card 1: V-Bucks/Coins -->
+                    <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl hover:bg-secondary-dark/80 transition duration-300 border border-accent-green/30">
+                        <h3 class="text-2xl font-semibold text-accent-green mb-2">Game Currency Max Pack</h3>
+                        <p class="text-gray-400 mb-4">Top-tier currency for your favorite Battle Royale, RPG, and MOBA titles.</p>
+                        <ul class="text-sm space-y-2 text-gray-300 list-disc list-inside">
+                            <li>20,000+ Units</li>
+                            <li>Instant Delivery</li>
+                            <li>Our Lowest Price Guaranteed</li>
+                        </ul>
+                        <!-- UPDATED: Calls addToCart from product cards -->
+                        <button class="w-full mt-6 py-2 bg-accent-green text-primary-dark font-bold rounded-lg glow-button" data-product-id="prod_currency_max" onclick="addToCart('prod_currency_max')">
+                            Add to Cart - $49.99
+                        </button>
+                    </div>
+
+                    <!-- Product Card 2: Box Live/Subs -->
+                    <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl hover:bg-secondary-dark/80 transition duration-300 border border-accent-green/30">
+                        <h3 class="text-2xl font-semibold text-accent-green mb-2">Box Live - 12 Month Code</h3>
+                        <p class="text-gray-400 mb-4">Access online play and free monthly games for a full year.</p>
+                        <ul class="text-sm space-y-2 text-gray-300 list-disc list-inside">
+                            <li>Digital Code Delivery</li>
+                            <li>Huge Savings vs. Retail</li>
+                            <li>Global Compatibility</li>
+                        </ul>
+                        <!-- UPDATED: Calls addToCart from product cards -->
+                        <button class="w-full mt-6 py-2 bg-accent-green text-primary-dark font-bold rounded-lg glow-button" data-product-id="prod_boxlive_12m" onclick="addToCart('prod_boxlive_12m')">
+                            Add to Cart - $34.99
+                        </button>
+                    </div>
+
+                    <!-- Product Card 3: New Game Title -->
+                    <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl hover:bg-secondary-dark/80 transition duration-300 border border-accent-green/30">
+                        <h3 class="text-2xl font-semibold text-accent-green mb-2">Exclusive Starter Bundle</h3>
+                        <p class="text-gray-400 mb-4">A mix of currency and a 3-month subscription for new players.</p>
+                        <ul class="text-sm space-y-2 text-gray-300 list-disc list-inside">
+                            <li>7,500 In-Game Coins</li>
+                            <li>3 Months Box Live Access</li>
+                            <li>Best for Beginners</li>
+                        </ul>
+                        <!-- UPDATED: Calls addToCart from product cards -->
+                        <button class="w-full mt-6 py-2 bg-accent-green text-primary-dark font-bold rounded-lg glow-button" data-product-id="prod_starter_bundle" onclick="addToCart('prod_starter_bundle')">
+                            Add to Cart - $24.99
+                        </button>
+                    </div>
+                    
+                    <!-- Product Card 4: High Value/Limited Time -->
+                    <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl ring-2 ring-accent-green hover:bg-secondary-dark/80 transition duration-300">
+                        <h3 class="text-2xl font-semibold text-red-400 mb-2">🔥 Limited Time Offer!</h3>
+                        <p class="text-gray-400 mb-4">Get Double the In-Game Currency for the standard price. Hurry!</p>
+                        <ul class="text-sm space-y-2 text-gray-300 list-disc list-inside">
+                            <li>40,000 Total Units</li>
+                            <li>Only 100 Codes Left</li>
+                            <li>Price Expires Tonight!</li>
+                        </ul>
+                        <!-- UPDATED: Calls addToCart from product cards -->
+                        <button class="w-full mt-6 py-2 bg-red-600 text-text-light font-bold rounded-lg glow-button" data-product-id="prod_double_deal" onclick="addToCart('prod_double_deal')">
+                            Add to Cart Now!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Features / Trust Section -->
+        <section id="features" class="py-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-4xl font-bold text-center mb-12">Why Choose <span class="glow-text">PicoPay</span>?</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+                    
+                    <!-- Feature 1: Speed -->
+                    <div class="p-6 rounded-xl bg-secondary-dark/50 hover:bg-secondary-dark transition duration-300 border-t-4 border-accent-green/50">
+                        <div class="text-5xl text-accent-green mb-4">🚀</div>
+                        <h3 class="text-xl font-semibold mb-2">Lightning Fast Delivery</h3>
+                        <p class="text-gray-400">Digital codes and currency transfers are processed within minutes, 24/7. No long waits!</p>
+                    </div>
+
+                    <!-- Feature 2: Price -->
+                    <div class="p-6 rounded-xl bg-secondary-dark/50 hover:bg-secondary-dark transition duration-300 border-t-4 border-accent-green/50">
+                        <div class="text-5xl text-accent-green mb-4">💸</div>
+                        <h3 class="text-xl font-semibold mb-2">Unbeatable Prices</h3>
+                        <p class="text-gray-400">We source directly to give you the lowest prices on the market for Box Live and game credits.</p>
+                    </div>
+
+                    <!-- Feature 3: Security -->
+                    <div class="p-6 rounded-xl bg-secondary-dark/50 hover:bg-secondary-dark transition duration-300 border-t-4 border-accent-green/50">
+                        <div class="text-5xl text-accent-green mb-4">🔒</div>
+                        <h3 class="text-xl font-semibold mb-2">Secure & Reliable</h3>
+                        <p class="text-gray-400">Trusted by thousands of gamers. All transactions are encrypted and your privacy is protected.</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-secondary-dark py-8 mt-12 border-t border-accent-green/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 
-                <!-- Password Input (Now the only field) -->
-                <div class="mb-8">
-                    <label for="admin-password" class="block text-sm font-medium mb-2">Secret Key</label>
-                    <input 
-                        type="password" 
-                        id="admin-password" 
-                        name="password"
-                        class="w-full p-3 bg-primary-dark border border-gray-600 rounded-lg focus:border-accent-green focus:ring focus:ring-accent-green/50 transition duration-200 text-text-light"
-                        placeholder="Enter the secret password"
-                        required
-                    >
+                <!-- Footer Column 1: Logo & Mission -->
+                <div class="md:col-span-1">
+                    <div class="flex justify-center md:justify-start items-center space-x-2 mb-3">
+                        <img src="image.png" alt="PicoPay Logo" class="h-6">
+                        <span class="text-2xl font-bold text-accent-green">PicoPay</span>
+                    </div>
+                    <p class="text-sm text-gray-400">Making gaming more affordable, one transaction at a time. Your trusted source for cheap gaming essentials.</p>
                 </div>
 
-                <!-- Login Button -->
-                <button 
-                    type="submit" 
-                    id="login-button"
-                    class="w-full py-3 bg-accent-green text-primary-dark text-lg font-bold rounded-xl glow-button"
-                >
-                    Sign In to Panel
+                <!-- Footer Column 2: Quick Links -->
+                <div class="md:text-center md:col-span-1">
+                    <h4 class="text-lg font-semibold mb-3">Quick Links</h4>
+                    <ul class="text-sm space-y-2 text-gray-400">
+                        <li><a href="#products" class="hover:text-accent-green transition duration-300 nav-link">In-Game Currency</a></li>
+                        <li><a href="#products" class="hover:text-accent-green transition duration-300 nav-link">Box Live</a></li>
+                        <li><a href="#" class="hover:text-accent-green transition duration-300 nav-link">FAQ</a></li>
+                    </ul>
+                </div>
+
+                <!-- Footer Column 3: Legal & Analytics -->
+                <div class="md:col-span-1">
+                    <h4 class="text-lg font-semibold mb-3 md:text-center">Legal & Traffic</h4>
+                    <ul class="text-sm space-y-2 text-gray-400 md:text-center">
+                         <!-- Real-time Visitor Counter -->
+                        <li>Visitors Today: <span id="hit-count" class="font-bold text-accent-green">0</span></li>
+                        <!-- LINK PATH CONFIRMATION: Using ./terms.html -->
+                        <li><a href="./terms.html" class="hover:text-accent-green transition duration-300 nav-link">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <!-- Footer Column 4: Contact -->
+                <div class="md:text-right md:col-span-1">
+                    <h4 class="text-lg font-semibold mb-3">Support</h4>
+                    <ul class="text-sm space-y-2 text-gray-400">
+                        <li>Email: <a href="mailto:support@picopay.com" class="hover:text-accent-green transition duration-300">support@picopay.com</a></li>
+                        <li>Live Chat: <span class="text-accent-green">Available 24/7</span></li>
+                        <li>&copy; 2025 PicoPay. All rights reserved.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Shopping Cart Modal (Hidden by Default) -->
+    <div id="cart-modal" class="fixed inset-0 hidden items-center justify-center modal-backdrop z-50">
+        <div class="bg-secondary-dark p-6 sm:p-8 m-4 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-accent-green/50">
+            <!-- Header remains outside the toggleable content wrapper -->
+            <div id="modal-header" class="flex justify-between items-center pb-4 border-b border-gray-700">
+                <h2 class="text-3xl font-bold text-accent-green">Your Cart</h2>
+                <button onclick="closeCartModal()" class="text-gray-400 hover:text-text-light transition duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
-            </form>
-            
-            <div class="mt-6 text-center text-sm">
-                <a href="index.html" class="text-gray-400 hover:text-accent-green transition duration-300">&larr; Back to Main Site</a>
+            </div>
+
+            <!-- Cart Content Wrapper -->
+            <div id="cart-content-wrapper">
+                <!-- Cart Items List -->
+                <div id="cart-items" class="py-4 space-y-4">
+                    <!-- Cart items will be rendered here by JavaScript -->
+                    <p id="empty-cart-message" class="text-gray-400 text-center py-8">Your cart is empty. Time to shop!</p>
+                </div>
+
+                <!-- Cart Total and Checkout -->
+                <div class="pt-4 border-t border-gray-700">
+                    <div class="flex justify-between items-center text-xl font-bold mb-4">
+                        <span>Total:</span>
+                        <span id="cart-total" class="text-accent-green">$0.00</span>
+                    </div>
+                    <!-- Checkout button -->
+                    <button onclick="checkoutCart()" class="w-full py-3 bg-accent-green text-primary-dark font-bold rounded-lg glow-button text-lg">
+                        Secure Checkout
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Custom Notification Area (reused from main app) -->
-    <div id="notification-container"></div>
+    <!-- JavaScript for Mobile Menu, Smooth Scrolling, Hit Counter, and Cart Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            updateDoc, 
+            increment, 
+            onSnapshot,
+            collection,
+            getDoc,
+            addDoc,
+            deleteDoc,
+            query,
+            where
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // setLogLevel('Debug'); // Uncomment for debugging
 
-    <script>
+        // --- MANDATORY FIREBASE INITIALIZATION ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        let db;
+        let auth;
+        let userId = null; // Current authenticated user ID
+        let isAuthReady = false;
+        let hasRecordedHit = false; // Flag to ensure we only increment the counter once per session
+        let cart = []; // Stores cart items from Firestore
+
+        // Product Catalog
+        const PRODUCTS = {
+            'prod_currency_max': { name: 'Game Currency Max Pack', price: 49.99 },
+            'prod_boxlive_12m': { name: 'Box Live - 12 Month Code', price: 34.99 },
+            'prod_starter_bundle': { name: 'Exclusive Starter Bundle', price: 24.99 },
+            'prod_double_deal': { name: 'Limited Time Double Deal', price: 49.99 }
+        };
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // 1. Authenticate the user and set up listeners
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    try {
+                        // Sign in anonymously if no user is found
+                        const userCredential = await signInAnonymously(auth);
+                        userId = userCredential.user.uid;
+                    } catch (error) {
+                        console.error("Firebase Anonymous sign-in failed:", error);
+                    }
+                } else {
+                    userId = user.uid;
+                }
+                isAuthReady = true;
+                setupVisitorCounter();
+                setupCartListener(); // Start listening for cart updates
+            });
+        } else {
+            console.error("Firebase configuration is missing. Data features disabled.");
+        }
+
+
         /**
-         * Simple user notification (since alert is forbidden) 
+         * 2. Real-time Listener for Visitor Count (Public Path)
+         */
+        function setupVisitorCounter() {
+            if (!db || !isAuthReady) return;
+
+            // Public path for the shared visitor count
+            const counterPath = `/artifacts/${appId}/public/data/site_stats`;
+            const docRef = doc(db, counterPath, "today");
+            
+            // Set up real-time listener
+            onSnapshot(docRef, (docSnap) => {
+                const countElement = document.getElementById('hit-count');
+                let visitorCount = 0;
+
+                if (docSnap.exists()) {
+                    visitorCount = docSnap.data().count || 0;
+                }
+                
+                // Update the UI
+                if (countElement) {
+                    countElement.textContent = visitorCount.toLocaleString();
+                }
+
+                // If the hit hasn't been recorded for this user session yet, record it now
+                if (!hasRecordedHit) {
+                    recordHit(docRef, docSnap.exists());
+                    hasRecordedHit = true;
+                }
+
+            }, (error) => {
+                console.error("Error setting up visitor counter listener:", error);
+                const countElement = document.getElementById('hit-count');
+                if (countElement) {
+                    countElement.textContent = 'Error';
+                }
+            });
+        }
+
+
+        /**
+         * 3. Atomically Increments the Visitor Count
+         */
+        async function recordHit(docRef, docExists) {
+            try {
+                if (docExists) {
+                    await updateDoc(docRef, { count: increment(1) });
+                } else {
+                    await setDoc(docRef, { count: 1, createdAt: new Date().toISOString() });
+                }
+            } catch (error) {
+                console.error("Error recording visitor hit:", error);
+            }
+        }
+
+        // --- SHOPPING CART LOGIC (Firestore) ---
+
+        /**
+         * 4. Real-time Listener for Cart Items (Private User Path)
+         */
+        function setupCartListener() {
+            if (!db || !userId) return;
+
+            // Private path for the user's cart
+            const cartCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/cart_items`);
+            const q = query(cartCollectionRef);
+
+            onSnapshot(q, (snapshot) => {
+                cart = snapshot.docs.map(doc => ({
+                    firestoreId: doc.id, // ID used for CRUD operations
+                    ...doc.data()
+                }));
+                // Re-render UI on every cart update
+                updateCartUI(); 
+            }, (error) => {
+                console.error("Error setting up cart listener:", error);
+                alertUser("Failed to load your cart data.", false);
+            });
+        }
+
+        /**
+         * 5. Adds a product to the cart or increments its quantity in Firestore.
+         */
+        window.addToCart = async function(productId) {
+            if (!db || !userId) {
+                alertUser("Authentication not complete. Please wait.", false);
+                return;
+            }
+
+            const product = PRODUCTS[productId];
+            if (!product) return;
+
+            // Find if the item already exists in the local 'cart' array (synced by listener)
+            const existingItem = cart.find(item => item.productId === productId);
+
+            try {
+                if (existingItem) {
+                    // Item exists: update quantity
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/cart_items`, existingItem.firestoreId);
+                    await updateDoc(docRef, {
+                        quantity: increment(1)
+                    });
+                } else {
+                    // Item does not exist: add new document
+                    const cartCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/cart_items`);
+                    await addDoc(cartCollectionRef, {
+                        productId: productId,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1
+                    });
+                }
+                alertUser(`${product.name} added to cart!`, true);
+
+            } catch (e) {
+                console.error("Error adding/updating cart item:", e);
+                alertUser("Failed to update cart. Please try again.", false);
+            }
+        }
+        
+        /**
+         * 6. Removes one unit of a product from the cart in Firestore.
+         */
+        window.removeFromCart = async function(firestoreId) {
+            if (!db || !userId) {
+                alertUser("Authentication not complete. Please wait.", false);
+                return;
+            }
+
+            const existingItem = cart.find(item => item.firestoreId === firestoreId);
+
+            if (!existingItem) return;
+
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/cart_items`, firestoreId);
+                
+                if (existingItem.quantity > 1) {
+                    // Quantity > 1: decrement quantity
+                    await updateDoc(docRef, {
+                        quantity: increment(-1)
+                    });
+                } else {
+                    // Quantity is 1: delete the document
+                    await deleteDoc(docRef);
+                }
+                
+                // The onSnapshot listener will handle the UI update
+
+            } catch (e) {
+                console.error("Error removing cart item:", e);
+                alertUser("Failed to remove item from cart.", false);
+            }
+        }
+
+        /** * 7. Updates the UI elements based on the global 'cart' array.
+         * Called automatically by the Firestore listener.
+         */
+        function updateCartUI() {
+            updateCartTotal();
+            updateCartCount();
+            renderCart();
+        }
+
+        /** Updates the small badge count on the cart icon */
+        function updateCartCount() {
+            const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+            document.getElementById('cart-count-desktop').textContent = totalItems;
+            document.getElementById('cart-count-mobile').textContent = totalItems;
+        }
+
+        /** Updates the total price displayed in the cart modal */
+        function updateCartTotal() {
+            const total = cart.reduce((sum, item) => {
+                // Use the price from the Firestore item, which should be fresh
+                return sum + ((item.price || 0) * (item.quantity || 0));
+            }, 0);
+
+            document.getElementById('cart-total').textContent = `$${total.toFixed(2)}`;
+        }
+
+        /** Renders the cart contents into the modal HTML */
+        function renderCart() {
+            const itemsContainer = document.getElementById('cart-items');
+            const emptyMessage = document.getElementById('empty-cart-message');
+
+            if (cart.length === 0) {
+                itemsContainer.innerHTML = '';
+                emptyMessage.classList.remove('hidden');
+                return;
+            }
+
+            emptyMessage.classList.add('hidden');
+            let html = '';
+
+            cart.forEach(item => {
+                const itemTotal = (item.price * item.quantity).toFixed(2);
+
+                html += `
+                    <div class="flex justify-between items-center bg-secondary-dark p-3 rounded-lg border border-gray-700">
+                        <div class="flex flex-col flex-grow">
+                            <span class="font-semibold text-text-light">${item.name}</span>
+                            <span class="text-sm text-gray-400">$${item.price.toFixed(2)} each</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="removeFromCart('${item.firestoreId}')" class="text-accent-green hover:text-red-500 font-bold px-2 py-1 rounded transition duration-200" aria-label="Remove item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                            <span class="font-bold text-lg">${item.quantity}</span>
+                            <button onclick="addToCartByFirestoreId('${item.firestoreId}')" class="text-accent-green hover:text-green-400 font-bold px-2 py-1 rounded transition duration-200" aria-label="Add item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                        </div>
+                        <span class="ml-4 font-bold">$${itemTotal}</span>
+                    </div>
+                `;
+            });
+
+            itemsContainer.innerHTML = html;
+        }
+
+        /** Helper to add to cart when only the Firestore ID is available (from modal buttons) */
+        window.addToCartByFirestoreId = async function(firestoreId) {
+            if (!db || !userId) {
+                alertUser("Authentication not complete. Please wait.", false);
+                return;
+            }
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/cart_items`, firestoreId);
+                await updateDoc(docRef, { quantity: increment(1) });
+                const item = cart.find(i => i.firestoreId === firestoreId);
+                if(item) alertUser(`${item.name} quantity increased!`, true);
+            } catch (e) {
+                console.error("Error incrementing cart quantity:", e);
+                alertUser("Failed to increase item quantity.", false);
+            }
+        }
+
+        /** Shows the cart modal */
+        window.openCartModal = function() {
+            document.getElementById('cart-modal').classList.remove('hidden');
+            document.getElementById('cart-modal').classList.add('flex');
+            // The listener ensures the cart is up-to-date, so just force a render.
+            updateCartUI(); 
+        }
+
+        /** Hides the cart modal */
+        window.closeCartModal = function() {
+            document.getElementById('cart-modal').classList.add('hidden');
+            document.getElementById('cart-modal').classList.remove('flex');
+        }
+
+        /** Checkout process: deletes all cart items and redirects to PayPal */
+        window.checkoutCart = async function() {
+            if (cart.length === 0) {
+                alertUser("Your cart is empty. Please add items to proceed.", false);
+                return;
+            }
+            if (!db || !userId) {
+                alertUser("Authentication not complete. Cannot proceed to checkout.", false);
+                return;
+            }
+
+            const totalText = document.getElementById('cart-total').textContent; // e.g., "$49.99"
+            const total = parseFloat(totalText.replace('$', '')).toFixed(2); // Get numerical total, fixed to 2 decimals
+            
+            // 1. Delete all items from Firestore
+            try {
+                const deletePromises = cart.map(item => {
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/cart_items`, item.firestoreId);
+                    return deleteDoc(docRef);
+                });
+                await Promise.all(deletePromises);
+
+                // The onSnapshot listener handles the UI clear.
+                
+                // 2. Send notification to user
+                alertUser(`Redirecting you to PayPal for payment of $${total}. Your cart has been cleared.`, true); 
+
+                // 3. Construct PayPal URL and redirect immediately
+                const paypalUrl = `https://paypal.me/Peanzyi/${total}USD`;
+                
+                closeCartModal();
+                window.location.href = paypalUrl;
+
+            } catch (e) {
+                console.error("Error during checkout and cart clear:", e);
+                alertUser("Checkout failed: Could not clear your cart. Please try again.", false);
+            }
+        }
+        
+        /** * Simple user notification (since alert is forbidden, we use a custom element) 
          * @param {string} message - The message to display.
          * @param {boolean} isSuccess - True for green success, false for red error.
          */
@@ -116,7 +679,8 @@
             const notificationEl = document.createElement('div');
             notificationEl.id = 'custom-notification';
             
-            const baseClasses = 'fixed top-4 right-4 p-4 rounded-lg shadow-xl custom-notification text-sm font-bold transition-all duration-300 ease-out cursor-pointer';
+            // Determine styling based on type
+            const baseClasses = 'fixed top-4 right-4 p-4 rounded-lg shadow-xl z-[90] text-sm font-bold transition-all duration-300 ease-out cursor-pointer';
             const colorClasses = isSuccess 
                 ? 'bg-accent-green text-primary-dark' 
                 : 'bg-red-600 text-text-light';
@@ -124,94 +688,95 @@
             notificationEl.className = `${baseClasses} ${colorClasses}`;
             notificationEl.textContent = message;
             
+            // Set initial state for animation
             notificationEl.style.opacity = '0';
             notificationEl.style.transform = 'translateY(-20px)';
 
             document.body.appendChild(notificationEl);
 
+            // Animate in
             setTimeout(() => {
                 notificationEl.style.opacity = '1';
                 notificationEl.style.transform = 'translateY(0)';
             }, 10); 
             
+            // Dismiss on click
             notificationEl.onclick = () => {
                 notificationEl.style.opacity = '0';
                 notificationEl.style.transform = 'translateY(-20px)';
                 setTimeout(() => notificationEl.remove(), 300);
             };
 
+            // Animate out and remove after 6 seconds
             setTimeout(() => {
                 notificationEl.style.opacity = '0';
                 notificationEl.style.transform = 'translateY(-20px)';
                 setTimeout(() => notificationEl.remove(), 500);
-            }, 6000); 
+            }, 6000); // Increased duration to 6s
         }
+
+        // --- UI AND NAVIGATION LOGIC ---
 
         /**
-         * Handles the form submission for admin login with brute-force protection.
+         * Placeholder function for Sign In/Auth click event.
          */
-        function handleAdminLogin(event) {
+        window.handleAuthClick = function(event) {
             event.preventDefault(); 
-            const passwordInput = document.getElementById('admin-password');
-            const password = passwordInput.value;
-            
-            // --- Configuration ---
-            const SECRET_KEY = 'P1c0P@yAdm1nS3cr3t'; // The new, harder-to-guess password
-            const MAX_ATTEMPTS = 2; 
-            const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
-
-            // --- Local Storage Keys ---
-            const ATTEMPTS_KEY = 'admin_login_attempts';
-            const LOCKOUT_KEY = 'admin_lockout_until';
-            
-            // --- Current State ---
-            let attempts = parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10);
-            let lockoutUntil = parseInt(localStorage.getItem(LOCKOUT_KEY) || '0', 10);
-            const now = Date.now();
-            
-            // 1. Check for Lockout Status
-            if (now < lockoutUntil) {
-                const remainingMs = lockoutUntil - now;
-                const remainingMinutes = Math.ceil(remainingMs / 60000);
-                alertUser(`Too many failed attempts. Try again in ${remainingMinutes} minutes.`, false);
-                passwordInput.value = ''; // Clear input on lockout
-                return;
-            }
-
-            // 2. Successful Login
-            if (password === SECRET_KEY) {
-                // Clear lockout and attempt counters on success
-                localStorage.removeItem(ATTEMPTS_KEY);
-                localStorage.removeItem(LOCKOUT_KEY);
-
-                alertUser('Login successful! Redirecting to admin dashboard...', true);
-                
-                // Resetting password input for security
-                passwordInput.value = '';
-                
-                // In a real app: window.location.href = '/admin/dashboard.html';
-                return;
-            }
-
-            // 3. Failed Login
-            attempts++;
-            localStorage.setItem(ATTEMPTS_KEY, attempts.toString());
-            passwordInput.value = ''; // Clear input after failure
-
-            console.log(`Failed login. Attempt ${attempts} of ${MAX_ATTEMPTS}.`);
-
-            if (attempts >= MAX_ATTEMPTS) {
-                // Lock the user out
-                lockoutUntil = now + LOCKOUT_DURATION_MS;
-                localStorage.setItem(LOCKOUT_KEY, lockoutUntil.toString());
-                
-                alertUser(`Maximum attempts reached (${MAX_ATTEMPTS}). Access denied for 30 minutes.`, false);
-            } else {
-                // Show remaining attempts
-                const remainingAttempts = MAX_ATTEMPTS - attempts;
-                alertUser(`Invalid Secret Key. ${remainingAttempts} attempt(s) remaining before lockout.`, false);
-            }
+            alertUser('Sign In functionality is currently a placeholder.', false);
         }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.getElementById('menu-toggle');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('menu-icon-open');
+            const iconClose = document.getElementById('menu-icon-close');
+            
+            // 1. Mobile Menu Toggle
+            if (menuToggle && mobileMenu) {
+                menuToggle.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                    iconOpen.classList.toggle('hidden');
+                    iconClose.classList.add('hidden'); 
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        iconOpen.classList.add('hidden');
+                        iconClose.classList.remove('hidden');
+                    }
+                });
+            }
+
+            // 2. Smooth Scrolling for all anchor links (Desktop and Mobile)
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    if (this.getAttribute('href') === '#') return;
+                    e.preventDefault();
+
+                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                        iconOpen.classList.remove('hidden');
+                        iconClose.classList.add('hidden');
+                    }
+
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // 3. Close modal when clicking outside (on the backdrop)
+            const cartModal = document.getElementById('cart-modal');
+            cartModal.addEventListener('click', function(event) {
+                // If the click target is the modal backdrop itself (not a child element)
+                if (event.target === cartModal) {
+                    closeCartModal();
+                }
+            });
+        });
     </script>
 </body>
 </html>
