@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicoPay | Terms of Service</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind for a dark theme with green accents -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#0a0a0a',
+                        'secondary-dark': '#1f2937',
+                        'accent-green': '#10b981', // Emerald green for the glow
+                        'text-light': '#f3f4f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Use Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for a glowing effect */
+        .glow-text {
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.7); /* accent-green glow */
+        }
+        .glow-button {
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); /* accent-green glow */
+            transition: box-shadow 0.3s ease-in-out, transform 0.1s ease-in-out;
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.9);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-primary-dark text-text-light font-sans min-h-screen antialiased">
+
+    <!-- Header & Navigation (Simplified for legal page) -->
+    <header class="bg-secondary-dark/50 backdrop-blur-sm sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <!-- Logo Area -->
+            <div class="flex items-center space-x-2">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <img 
+                        src="image.png" 
+                        onerror="this.onerror=null;this.src='https://placehold.co/150x50/10b981/ffffff?text=PicoPay'" 
+                        alt="PicoPay Logo - Green Glowing P" 
+                        class="h-8 md:h-10 rounded-full"
+                    >
+                    <span class="text-2xl font-bold text-accent-green hidden sm:inline">PicoPay</span>
+                </a>
+            </div>
+            
+            <!-- Back to Home Link -->
+            <a href="index.html" class="bg-accent-green text-primary-dark px-4 py-2 rounded-full font-semibold hover:bg-emerald-500 transition duration-300">Back to Home</a>
+        </div>
+    </header>
+
+    <main class="py-16">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 bg-secondary-dark/50 p-6 sm:p-10 rounded-xl border border-accent-green/30 shadow-2xl">
+            <h1 class="text-4xl sm:text-5xl font-extrabold mb-4 text-center glow-text">
+                Terms of Service
+            </h1>
+            <p class="text-center text-gray-400 mb-10">Last Updated: November 24, 2025</p>
+
+            <!-- 1. General Agreement -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-accent-green mb-3">1. Agreement to Terms</h2>
+                <p class="text-gray-300">
+                    These Terms of Service ("Terms") constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and PicoPay ("we," "us," or "our"), concerning your access to and use of the PicoPay website (the "Site") and our services. By accessing the Site, you agree to be bound by these Terms. IF YOU DO NOT AGREE WITH ALL OF THESE TERMS OF SERVICE, THEN YOU ARE EXPRESSLY PROHIBITED FROM USING THE SITE AND YOU MUST DISCONTINUE USE IMMEDIATELY.
+                </p>
+            </section>
+
+            <!-- 2. Products and Services -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-accent-green mb-3">2. Products and Services</h2>
+                <p class="text-gray-300 mb-3">
+                    PicoPay offers the sale of digital goods, including but not limited to, in-game currency, digital gift cards, and subscription codes for online gaming services ("Products").
+                </p>
+                <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">
+                    <li><strong class="text-text-light">Digital Delivery:</strong> All Products are delivered digitally, typically via email or on-screen display of a code, immediately or shortly after successful payment.</li>
+                    <li><strong class="text-text-light">Third-Party Products:</strong> We are a reseller of third-party digital codes and currencies. We are not affiliated with the official publishers or developers of the games or services (e.g., Box Live).</li>
+                    <li><strong class="text-text-light">Verification:</strong> You are responsible for ensuring the codes/currency are redeemed correctly on the respective platform.</li>
+                </ul>
+            </section>
+            
+            <!-- 3. Payments and Pricing -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-accent-green mb-3">3. Payments and Pricing</h2>
+                <p class="text-gray-300 mb-3">
+                    All prices are listed in the currency specified on the Site. We reserve the right to change prices at any time without prior notice.
+                </p>
+                <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">
+                    <li><strong class="text-text-light">Payment Methods:</strong> We accept various payment methods as indicated at checkout. By providing payment information, you warrant that you are authorized to use the designated payment method.</li>
+                    <li><strong class="text-text-light">Fraud Protection:</strong> We employ strict fraud prevention measures. Transactions deemed suspicious may be delayed or cancelled at our sole discretion.</li>
+                </ul>
+            </section>
+            
+            <!-- 4. Refunds and Returns Policy -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-accent-green mb-3">4. Refunds and Returns Policy</h2>
+                <p class="text-gray-300 mb-3">
+                    Due to the nature of digital goods, Products are generally non-refundable once they have been delivered.
+                </p>
+                <ul class="list-disc list-inside text-gray-300 ml-4 space-y-2">
+                    <li><strong class="text-text-light">Invalid Codes:</strong> If a delivered code is confirmed by our support team to be invalid or non-functional upon delivery, a replacement code or full refund will be issued.</li>
+                    <li><strong class="text-text-light">User Error:</strong> We do not offer refunds for purchases made in error, such as buying the wrong game currency or region-locked subscriptions for the wrong area.</li>
+                </ul>
+            </section>
+
+            <!-- 5. User Obligations and Prohibited Activities -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-accent-green mb-3">5. User Obligations and Prohibited Activities</h2>
+                <p class="text-gray-300">
+                    You agree not to use the Site or our Products for any unlawful purpose or in any way that violates these Terms. Prohibited activities include, but are not limited to, unauthorized commercial use, bulk purchasing for resale, and use of automated systems to access the Site.
+                </p>
+            </section>
+
+            <!-- 6. Governing Law -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-accent-green mb-3">6. Governing Law</h2>
+                <p class="text-gray-300">
+                    These Terms and your use of the Site are governed by and construed in accordance with the laws of [Your Jurisdiction, e.g., The State of California], without regard to its conflict of law principles.
+                </p>
+            </section>
+            
+            <!-- 7. Contact Us -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-accent-green mb-3">7. Contact Us</h2>
+                <p class="text-gray-300">
+                    If you have questions or concerns regarding these Terms, please contact us at:
+                    <br>
+                    <a href="mailto:support@picopay.com" class="text-accent-green hover:underline">support@picopay.com</a>
+                </p>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer (Simplified for legal page) -->
+    <footer class="bg-secondary-dark py-4 mt-12 border-t border-accent-green/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center text-gray-400 text-sm">
+            &copy; 2025 PicoPay. All rights reserved. | <a href="index.html" class="hover:text-accent-green">Home</a>
+        </div>
+    </footer>
+</body>
+</html>
+
