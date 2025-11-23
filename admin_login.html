@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" style="scroll-behavior: smooth;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicoPay Admin Panel Sign In</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind for a dark theme with green accents -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#0a0a0a',
+                        'secondary-dark': '#1f2937',
+                        'accent-green': '#10b981', // Emerald green for the glow
+                        'text-light': '#f3f4f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Use Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for a glowing effect on the card */
+        .admin-card {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.1); /* Subtle green glow */
+        }
+        .glow-text {
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+        }
+        .glow-button {
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transition: box-shadow 0.3s ease-in-out, transform 0.1s ease-in-out;
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.9);
+            transform: translateY(-2px);
+        }
+        /* Style for the notification box (reusing logic from main file) */
+        .custom-notification {
+            z-index: 90;
+        }
+    </style>
+</head>
+<body class="bg-primary-dark text-text-light font-sans min-h-screen antialiased flex items-center justify-center p-4">
+
+    <!-- Admin Sign In Container -->
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center space-x-2 mb-2">
+                <img 
+                    src="image.png" 
+                    onerror="this.onerror=null;this.src='https://placehold.co/100x50/10b981/ffffff?text=PicoPay'" 
+                    alt="PicoPay Logo" 
+                    class="h-10 rounded-full"
+                >
+            </div>
+            <h1 class="text-3xl font-bold text-accent-green glow-text">Admin Access</h1>
+            <p class="text-gray-400 mt-2">Enter the Secret Key to access the Panel</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-secondary-dark p-8 rounded-xl admin-card border border-accent-green/30">
+            <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+                
+                <!-- Password Input (Now the only field) -->
+                <div class="mb-8">
+                    <label for="admin-password" class="block text-sm font-medium mb-2">Secret Key</label>
+                    <input 
+                        type="password" 
+                        id="admin-password" 
+                        name="password"
+                        class="w-full p-3 bg-primary-dark border border-gray-600 rounded-lg focus:border-accent-green focus:ring focus:ring-accent-green/50 transition duration-200 text-text-light"
+                        placeholder="Enter the secret password"
+                        required
+                    >
+                </div>
+
+                <!-- Login Button -->
+                <button 
+                    type="submit" 
+                    id="login-button"
+                    class="w-full py-3 bg-accent-green text-primary-dark text-lg font-bold rounded-xl glow-button"
+                >
+                    Sign In to Panel
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center text-sm">
+                <a href="index.html" class="text-gray-400 hover:text-accent-green transition duration-300">&larr; Back to Main Site</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Notification Area (reused from main app) -->
+    <div id="notification-container"></div>
+
+    <script>
+        /**
+         * Simple user notification (since alert is forbidden) 
+         * @param {string} message - The message to display.
+         * @param {boolean} isSuccess - True for green success, false for red error.
+         */
+        function alertUser(message, isSuccess = true) {
+            console.log("NOTIFICATION:", message);
+            const existing = document.getElementById('custom-notification');
+            if (existing) existing.remove();
+            
+            const notificationEl = document.createElement('div');
+            notificationEl.id = 'custom-notification';
+            
+            const baseClasses = 'fixed top-4 right-4 p-4 rounded-lg shadow-xl custom-notification text-sm font-bold transition-all duration-300 ease-out cursor-pointer';
+            const colorClasses = isSuccess 
+                ? 'bg-accent-green text-primary-dark' 
+                : 'bg-red-600 text-text-light';
+
+            notificationEl.className = `${baseClasses} ${colorClasses}`;
+            notificationEl.textContent = message;
+            
+            notificationEl.style.opacity = '0';
+            notificationEl.style.transform = 'translateY(-20px)';
+
+            document.body.appendChild(notificationEl);
+
+            setTimeout(() => {
+                notificationEl.style.opacity = '1';
+                notificationEl.style.transform = 'translateY(0)';
+            }, 10); 
+            
+            notificationEl.onclick = () => {
+                notificationEl.style.opacity = '0';
+                notificationEl.style.transform = 'translateY(-20px)';
+                setTimeout(() => notificationEl.remove(), 300);
+            };
+
+            setTimeout(() => {
+                notificationEl.style.opacity = '0';
+                notificationEl.style.transform = 'translateY(-20px)';
+                setTimeout(() => notificationEl.remove(), 500);
+            }, 6000); 
+        }
+
+        /**
+         * Handles the form submission for admin login with brute-force protection.
+         */
+        function handleAdminLogin(event) {
+            event.preventDefault(); 
+            const passwordInput = document.getElementById('admin-password');
+            const password = passwordInput.value;
+            
+            // --- Configuration ---
+            const SECRET_KEY = 'P1c0P@yAdm1nS3cr3t'; // The new, harder-to-guess password
+            const MAX_ATTEMPTS = 2; 
+            const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+            // --- Local Storage Keys ---
+            const ATTEMPTS_KEY = 'admin_login_attempts';
+            const LOCKOUT_KEY = 'admin_lockout_until';
+            
+            // --- Current State ---
+            let attempts = parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10);
+            let lockoutUntil = parseInt(localStorage.getItem(LOCKOUT_KEY) || '0', 10);
+            const now = Date.now();
+            
+            // 1. Check for Lockout Status
+            if (now < lockoutUntil) {
+                const remainingMs = lockoutUntil - now;
+                const remainingMinutes = Math.ceil(remainingMs / 60000);
+                alertUser(`Too many failed attempts. Try again in ${remainingMinutes} minutes.`, false);
+                passwordInput.value = ''; // Clear input on lockout
+                return;
+            }
+
+            // 2. Successful Login
+            if (password === SECRET_KEY) {
+                // Clear lockout and attempt counters on success
+                localStorage.removeItem(ATTEMPTS_KEY);
+                localStorage.removeItem(LOCKOUT_KEY);
+
+                alertUser('Login successful! Redirecting to admin dashboard...', true);
+                
+                // Resetting password input for security
+                passwordInput.value = '';
+                
+                // In a real app: window.location.href = '/admin/dashboard.html';
+                return;
+            }
+
+            // 3. Failed Login
+            attempts++;
+            localStorage.setItem(ATTEMPTS_KEY, attempts.toString());
+            passwordInput.value = ''; // Clear input after failure
+
+            console.log(`Failed login. Attempt ${attempts} of ${MAX_ATTEMPTS}.`);
+
+            if (attempts >= MAX_ATTEMPTS) {
+                // Lock the user out
+                lockoutUntil = now + LOCKOUT_DURATION_MS;
+                localStorage.setItem(LOCKOUT_KEY, lockoutUntil.toString());
+                
+                alertUser(`Maximum attempts reached (${MAX_ATTEMPTS}). Access denied for 30 minutes.`, false);
+            } else {
+                // Show remaining attempts
+                const remainingAttempts = MAX_ATTEMPTS - attempts;
+                alertUser(`Invalid Secret Key. ${remainingAttempts} attempt(s) remaining before lockout.`, false);
+            }
+        }
+    </script>
+</body>
+</html>
+
