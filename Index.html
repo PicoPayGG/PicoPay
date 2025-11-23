@@ -48,7 +48,6 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <!-- Logo Area -->
             <div class="flex items-center space-x-2">
-                <!-- IMPORTANT: Replace 'image.png' with the actual path if moved, and ensure it's uploaded! -->
                 <img 
                     src="image.png" 
                     onerror="this.onerror=null;this.src='https://placehold.co/150x50/10b981/ffffff?text=PicoPay'" 
@@ -230,8 +229,8 @@
                 <div class="md:col-span-1">
                     <h4 class="text-lg font-semibold mb-3 md:text-center">Legal & Traffic</h4>
                     <ul class="text-sm space-y-2 text-gray-400 md:text-center">
-                         <!-- Hit Counter Placeholder -->
-                        <li>Visitors Today: <span id="hit-count" class="font-bold text-accent-green">Loading...</span></li>
+                         <!-- Real-time Visitor Counter -->
+                        <li>Visitors Today: <span id="hit-count" class="font-bold text-accent-green">0</span></li>
                         <!-- LINK PATH CONFIRMATION: Using ./terms.html -->
                         <li><a href="./terms.html" class="hover:text-accent-green transition duration-300 nav-link">Terms of Service</a></li>
                     </ul>
@@ -252,7 +251,122 @@
     </footer>
 
     <!-- JavaScript for Mobile Menu, Smooth Scrolling, and Hit Counter -->
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, increment, onSnapshot, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // setLogLevel('Debug'); // Uncomment for debugging
+
+        // --- MANDATORY FIREBASE INITIALIZATION ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        let db;
+        let auth;
+        let isAuthReady = false;
+        let hasRecordedHit = false; // Flag to ensure we only increment the counter once per session
+
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // 1. Authenticate the user (anonymously is sufficient for a public counter)
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Firebase Anonymous sign-in failed:", error);
+                    }
+                }
+                isAuthReady = true;
+                // Once authenticated, start the counter logic
+                setupVisitorCounter();
+            });
+        } else {
+            console.error("Firebase configuration is missing. Visitor counter will not be functional.");
+        }
+
+
+        /**
+         * 2. Real-time Listener for Visitor Count
+         */
+        function setupVisitorCounter() {
+            if (!db || !isAuthReady) return;
+
+            // Public path for the shared visitor count
+            const counterPath = `/artifacts/${appId}/public/data/site_stats/visitors`;
+            const docRef = doc(db, counterPath, "today");
+            
+            // Set up real-time listener
+            onSnapshot(docRef, (docSnap) => {
+                const countElement = document.getElementById('hit-count');
+                let visitorCount = 0;
+
+                if (docSnap.exists()) {
+                    visitorCount = docSnap.data().count || 0;
+                }
+                
+                // Update the UI
+                if (countElement) {
+                    countElement.textContent = visitorCount.toLocaleString();
+                }
+
+                // If the hit hasn't been recorded for this user session yet, record it now
+                if (!hasRecordedHit) {
+                    recordHit(docRef, docSnap.exists());
+                    hasRecordedHit = true;
+                }
+
+            }, (error) => {
+                console.error("Error setting up visitor counter listener:", error);
+                const countElement = document.getElementById('hit-count');
+                if (countElement) {
+                    countElement.textContent = 'Error';
+                }
+            });
+        }
+
+
+        /**
+         * 3. Atomically Increments the Visitor Count
+         * @param {DocumentReference} docRef - The reference to the Firestore document.
+         * @param {boolean} docExists - True if the document already exists.
+         */
+        async function recordHit(docRef, docExists) {
+            try {
+                if (docExists) {
+                    // If the document exists, increment the counter field by 1
+                    await updateDoc(docRef, {
+                        count: increment(1)
+                    });
+                } else {
+                    // If the document does NOT exist, create it and set the count to 1
+                    await setDoc(docRef, {
+                        count: 1,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                console.log("Visitor hit recorded successfully.");
+
+            } catch (error) {
+                console.error("Error recording visitor hit:", error);
+                // Try again using a transaction if there was a race condition error,
+                // although updateDoc handles most simple increments atomically.
+                if (error.code === 'unavailable' || error.code === 'internal') {
+                     // Simple retry logic on failure
+                    console.log("Retrying hit record...");
+                    await recordHit(docRef, docExists);
+                }
+            }
+        }
+
+
+        // --- UI AND NAVIGATION LOGIC ---
+
         /**
          * Placeholder function for Sign In/Auth click event.
          */
@@ -262,31 +376,6 @@
             console.log('Authentication button clicked. A modal or redirect would appear here.');
         }
 
-        /**
-         * Placeholder function to simulate recording a page view (hit).
-         */
-        function recordHit() {
-            const hitCountElement = document.getElementById('hit-count');
-            
-            // --- START ANALYTICS SIMULATION ---
-            // Fetch the current count from a simple API (if available) or local storage.
-            let currentHits = parseInt(localStorage.getItem('picopay_hits')) || 1500; 
-
-            // Increment the count for this view
-            currentHits += 1;
-            
-            // Save the new count (Simulation only - a real counter needs a backend/database)
-            localStorage.setItem('picopay_hits', currentHits);
-
-            // Display the updated count
-            if (hitCountElement) {
-                hitCountElement.textContent = currentHits.toLocaleString();
-            }
-            // --- END ANALYTICS SIMULATION ---
-
-            console.log('Page view recorded.');
-        }
-
 
         document.addEventListener('DOMContentLoaded', () => {
             const menuToggle = document.getElementById('menu-toggle');
@@ -294,9 +383,6 @@
             const iconOpen = document.getElementById('menu-icon-open');
             const iconClose = document.getElementById('menu-icon-close');
             
-            // Call the function to record the hit when the page loads
-            recordHit();
-
             // 1. Mobile Menu Toggle
             if (menuToggle && mobileMenu) {
                 menuToggle.addEventListener('click', () => {
@@ -304,7 +390,11 @@
                     mobileMenu.classList.toggle('hidden');
                     // Toggle the icons
                     iconOpen.classList.toggle('hidden');
-                    iconClose.classList.toggle('hidden');
+                    iconClose.classList.add('hidden'); // Ensure close is hidden when menu is closed
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        iconOpen.classList.add('hidden');
+                        iconClose.classList.remove('hidden');
+                    }
                 });
             }
 
