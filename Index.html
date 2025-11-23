@@ -205,10 +205,10 @@
     <!-- Footer -->
     <footer id="contact" class="bg-secondary-dark py-8 mt-12 border-t border-accent-green/20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 
                 <!-- Footer Column 1: Logo & Mission -->
-                <div>
+                <div class="md:col-span-1">
                     <div class="flex justify-center md:justify-start items-center space-x-2 mb-3">
                         <img src="image.png" alt="PicoPay Logo" class="h-6">
                         <span class="text-2xl font-bold text-accent-green">PicoPay</span>
@@ -217,18 +217,28 @@
                 </div>
 
                 <!-- Footer Column 2: Quick Links -->
-                <div class="md:text-center">
+                <div class="md:text-center md:col-span-1">
                     <h4 class="text-lg font-semibold mb-3">Quick Links</h4>
                     <ul class="text-sm space-y-2 text-gray-400">
                         <li><a href="#products" class="hover:text-accent-green transition duration-300 nav-link">In-Game Currency</a></li>
                         <li><a href="#products" class="hover:text-accent-green transition duration-300 nav-link">Box Live</a></li>
                         <li><a href="#" class="hover:text-accent-green transition duration-300 nav-link">FAQ</a></li>
-                        <li><a href="#" class="hover:text-accent-green transition duration-300 nav-link">Terms of Service</a></li>
                     </ul>
                 </div>
 
-                <!-- Footer Column 3: Contact -->
-                <div class="md:text-right">
+                <!-- Footer Column 3: Legal & Analytics -->
+                <div class="md:col-span-1">
+                    <h4 class="text-lg font-semibold mb-3 md:text-center">Legal & Traffic</h4>
+                    <ul class="text-sm space-y-2 text-gray-400 md:text-center">
+                         <!-- Hit Counter Placeholder -->
+                        <li>Visitors Today: <span id="hit-count" class="font-bold text-accent-green">Loading...</span></li>
+                        <!-- LINK PATH CONFIRMATION: Using ./terms.html -->
+                        <li><a href="./terms.html" class="hover:text-accent-green transition duration-300 nav-link">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <!-- Footer Column 4: Contact -->
+                <div class="md:text-right md:col-span-1">
                     <h4 class="text-lg font-semibold mb-3">Support</h4>
                     <ul class="text-sm space-y-2 text-gray-400">
                         <li>Email: <a href="mailto:support@picopay.com" class="hover:text-accent-green transition duration-300">support@picopay.com</a></li>
@@ -241,17 +251,42 @@
         </div>
     </footer>
 
-    <!-- JavaScript for Mobile Menu and Smooth Scrolling -->
+    <!-- JavaScript for Mobile Menu, Smooth Scrolling, and Hit Counter -->
     <script>
         /**
          * Placeholder function for Sign In/Auth click event.
-         * In a real application, this would open a modal or redirect to a login page.
          */
         function handleAuthClick(event) {
-            event.preventDefault(); // Stop navigation
+            event.preventDefault(); 
+            // In a real application, this would open a modal or redirect to a login page.
             console.log('Authentication button clicked. A modal or redirect would appear here.');
-            // You can replace console.log with a custom modal implementation if needed.
         }
+
+        /**
+         * Placeholder function to simulate recording a page view (hit).
+         */
+        function recordHit() {
+            const hitCountElement = document.getElementById('hit-count');
+            
+            // --- START ANALYTICS SIMULATION ---
+            // Fetch the current count from a simple API (if available) or local storage.
+            let currentHits = parseInt(localStorage.getItem('picopay_hits')) || 1500; 
+
+            // Increment the count for this view
+            currentHits += 1;
+            
+            // Save the new count (Simulation only - a real counter needs a backend/database)
+            localStorage.setItem('picopay_hits', currentHits);
+
+            // Display the updated count
+            if (hitCountElement) {
+                hitCountElement.textContent = currentHits.toLocaleString();
+            }
+            // --- END ANALYTICS SIMULATION ---
+
+            console.log('Page view recorded.');
+        }
+
 
         document.addEventListener('DOMContentLoaded', () => {
             const menuToggle = document.getElementById('menu-toggle');
@@ -259,6 +294,9 @@
             const iconOpen = document.getElementById('menu-icon-open');
             const iconClose = document.getElementById('menu-icon-close');
             
+            // Call the function to record the hit when the page loads
+            recordHit();
+
             // 1. Mobile Menu Toggle
             if (menuToggle && mobileMenu) {
                 menuToggle.addEventListener('click', () => {
