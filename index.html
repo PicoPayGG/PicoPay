@@ -80,6 +80,11 @@
             animation: cart-shake 0.4s ease-in-out;
             color: #10b981; /* Turn green while shaking */
         }
+
+        /* Prevent double-tap zoom on buttons */
+        .add-to-cart-btn {
+            touch-action: manipulation;
+        }
     </style>
 </head>
 <body class="bg-primary-dark text-text-light font-sans min-h-screen antialiased">
@@ -111,9 +116,10 @@
                     <span id="cart-count-desktop" class="absolute -top-1 -right-1 bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center">0</span>
                 </button>
 
-                <a href="#" class="nav-link text-text-light bg-accent-green/10 px-4 py-2 rounded-lg hover:bg-accent-green/30 transition duration-300">
+                <!-- Dynamic Auth Button Desktop -->
+                <button id="auth-btn-desktop" onclick="handleAuthClick()" class="nav-link text-text-light bg-accent-green/10 px-4 py-2 rounded-lg hover:bg-accent-green/30 transition duration-300">
                     Sign In
-                </a>
+                </button>
             </nav>
 
             <!-- Mobile Menu Area (Cart Icon + Hamburger) -->
@@ -138,7 +144,12 @@
                 <a href="#products" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300" onclick="toggleMobileMenu()">Products</a>
                 <a href="#features" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300" onclick="toggleMobileMenu()">Why Us?</a>
                 <a href="#contact" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300" onclick="toggleMobileMenu()">Contact</a>
-                <a href="#" class="block py-2 px-3 bg-accent-green/10 rounded-md text-center hover:bg-accent-green/30 transition duration-300">Sign In</a>
+                
+                <!-- Mobile Auth Button -->
+                <button id="auth-btn-mobile" onclick="handleAuthClick(); toggleMobileMenu();" class="w-full text-left py-2 px-3 bg-accent-green/10 rounded-md hover:bg-accent-green/30 transition duration-300">
+                    Sign In
+                </button>
+                
                 <!-- Mobile Cart Button (Menu Item) -->
                 <button class="w-full py-2 px-3 text-left relative hover:bg-accent-green/20 rounded-md transition duration-300 flex items-center justify-start space-x-2" onclick="openCartModal(); toggleMobileMenu();">
                     <!-- Shopping Cart Icon -->
@@ -152,7 +163,8 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-
+        <!-- ... existing content ... -->
+        
         <!-- Hero Section -->
         <section class="text-center py-12 md:py-24">
             <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold mb-4 leading-tight">
@@ -291,6 +303,38 @@
         </div>
     </div>
 
+    <!-- Auth Modal (Sign In / Register) -->
+    <div id="auth-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100] p-4">
+        <div class="bg-secondary-dark p-8 rounded-xl shadow-2xl max-w-md w-full border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="auth-modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="auth-title" class="text-2xl font-bold text-accent-green">Sign In</h3>
+                <button class="text-gray-400 hover:text-red-500" onclick="closeAuthModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                    <input type="email" id="auth-email" class="w-full bg-primary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-green focus:outline-none focus:ring-1 focus:ring-accent-green" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                    <input type="password" id="auth-password" class="w-full bg-primary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-green focus:outline-none focus:ring-1 focus:ring-accent-green" placeholder="••••••••">
+                </div>
+                
+                <button id="auth-submit-btn" class="w-full glow-button bg-accent-green text-primary-dark font-semibold py-3 rounded-lg shadow-lg hover:bg-green-500 transition duration-300" onclick="handleAuthSubmit()">
+                    Sign In
+                </button>
+                
+                <p class="text-center text-sm text-gray-400 mt-4">
+                    <span id="auth-toggle-text">Don't have an account?</span>
+                    <button id="auth-toggle-btn" class="text-accent-green hover:underline ml-1" onclick="toggleAuthMode()">Register</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Shopping Cart Modal -->
     <div id="cart-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100]">
         <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-lg w-full border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="cart-modal-content">
@@ -401,15 +445,133 @@
 
 
     <!-- JavaScript logic -->
-    <script type="text/javascript">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
         // ------------------------------------------------------------------
-        // FIREBASE SETUP (Mandatory for real-world apps)
-        // Note: Actual Firebase interaction is omitted here as storage is not requested,
-        // but the setup variables are required for proper file structure.
+        // FIREBASE SETUP
         // ------------------------------------------------------------------
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
         const firebaseConfig = JSON.parse(firebaseConfigString);
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Auth State
+        let currentUser = null;
+        let isRegistering = false;
+
+        // Monitor Auth State
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            updateAuthUI(user);
+        });
+
+        function updateAuthUI(user) {
+            const desktopBtn = document.getElementById('auth-btn-desktop');
+            const mobileBtn = document.getElementById('auth-btn-mobile');
+            
+            if (user) {
+                const btnText = `Sign Out (${user.email.split('@')[0]})`;
+                if(desktopBtn) desktopBtn.innerText = btnText;
+                if(mobileBtn) mobileBtn.innerText = btnText;
+            } else {
+                if(desktopBtn) desktopBtn.innerText = "Sign In";
+                if(mobileBtn) mobileBtn.innerText = "Sign In";
+            }
+        }
+
+        // Make functions global for HTML onclick attributes
+        window.handleAuthClick = function() {
+            if (currentUser) {
+                // User is signed in, so sign out
+                signOut(auth).then(() => {
+                    showMessageModal("You have been signed out.");
+                }).catch((error) => {
+                    showMessageModal("Error signing out: " + error.message);
+                });
+            } else {
+                // User is not signed in, open modal
+                window.openAuthModal();
+            }
+        }
+
+        window.openAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+        }
+
+        window.closeAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // Reset fields
+                document.getElementById('auth-email').value = '';
+                document.getElementById('auth-password').value = '';
+            }, 300);
+        }
+
+        window.toggleAuthMode = function() {
+            isRegistering = !isRegistering;
+            const title = document.getElementById('auth-title');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+
+            if (isRegistering) {
+                title.textContent = "Create Account";
+                submitBtn.textContent = "Register";
+                toggleText.textContent = "Already have an account?";
+                toggleBtn.textContent = "Sign In";
+            } else {
+                title.textContent = "Sign In";
+                submitBtn.textContent = "Sign In";
+                toggleText.textContent = "Don't have an account?";
+                toggleBtn.textContent = "Register";
+            }
+        }
+
+        window.handleAuthSubmit = function() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (!email || !password) {
+                showMessageModal("Please enter both email and password.");
+                return;
+            }
+
+            if (isRegistering) {
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        window.closeAuthModal();
+                        showMessageModal("Account created successfully! Welcome.");
+                    })
+                    .catch((error) => {
+                        showMessageModal("Registration Error: " + error.message);
+                    });
+            } else {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        window.closeAuthModal();
+                        showMessageModal("Welcome back!");
+                    })
+                    .catch((error) => {
+                        showMessageModal("Login Error: " + error.message);
+                    });
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // APP LOGIC
+        // ------------------------------------------------------------------
         
         // Data structure for the shopping cart
         let cart = [];
@@ -417,12 +579,12 @@
         /**
          * Loads cart from LocalStorage on initialization.
          */
-        function loadCart() {
+        window.loadCart = function() {
             const saved = localStorage.getItem('picopay_cart');
             if (saved) {
                 try {
                     cart = JSON.parse(saved);
-                    updateCartCount();
+                    window.updateCartCount();
                 } catch (e) {
                     console.error("Failed to load cart", e);
                     cart = [];
@@ -433,16 +595,16 @@
         /**
          * Saves current cart to LocalStorage.
          */
-        function saveCart() {
+        window.saveCart = function() {
             localStorage.setItem('picopay_cart', JSON.stringify(cart));
-            updateCartCount();
+            window.updateCartCount();
         }
 
         /**
          * Shows a custom message modal (replacing alert()).
          * @param {string} message The message to display.
          */
-        function showMessageModal(message) {
+        window.showMessageModal = function(message) {
             const modal = document.getElementById('message-modal');
             const modalContent = document.getElementById('message-modal-content');
             document.getElementById('modal-message').textContent = message;
@@ -456,7 +618,7 @@
         /**
          * Closes the custom message modal.
          */
-        function closeMessageModal() {
+        window.closeMessageModal = function() {
             const modal = document.getElementById('message-modal');
             const modalContent = document.getElementById('message-modal-content');
             
@@ -469,7 +631,7 @@
         /**
          * Toggles the mobile navigation menu visibility.
          */
-        function toggleMobileMenu() {
+        window.toggleMobileMenu = function() {
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('hidden');
         }
@@ -478,28 +640,25 @@
          * Scrolls to a specific element on the page.
          * @param {string} id The ID of the element to scroll to.
          */
-        function scrollToElement(id) {
+        window.scrollToElement = function(id) {
             document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
         }
 
         /**
          * Updates the cart count displayed on the header buttons.
          */
-        function updateCartCount() {
+        window.updateCartCount = function() {
             const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-            document.getElementById('cart-count-desktop').textContent = count;
-            document.getElementById('cart-count-mobile').textContent = count;
+            const desktopCount = document.getElementById('cart-count-desktop');
+            const mobileCount = document.getElementById('cart-count-mobile');
+            const mobileHeaderCount = document.getElementById('cart-count-mobile-header');
             
-            // Sync new mobile header badge
-            const mobileHeaderBadge = document.getElementById('cart-count-mobile-header');
-            if (mobileHeaderBadge) mobileHeaderBadge.textContent = count;
+            if(desktopCount) desktopCount.textContent = count;
+            if(mobileCount) mobileCount.textContent = count;
+            if(mobileHeaderCount) mobileHeaderCount.textContent = count;
             
             // Animate badges
-            const badges = [
-                document.getElementById('cart-count-desktop'), 
-                document.getElementById('cart-count-mobile'),
-                mobileHeaderBadge
-            ];
+            const badges = [desktopCount, mobileCount, mobileHeaderCount];
             
             badges.forEach(badge => {
                 if(badge) {
@@ -517,7 +676,7 @@
          * Animates a particle flying from the button to the cart icon.
          * @param {HTMLElement} btnElement The button that was clicked.
          */
-        function animateFlyToCart(btnElement) {
+        window.animateFlyToCart = function(btnElement) {
             // 1. Create particle
             const particle = document.createElement('div');
             particle.classList.add('fly-item');
@@ -550,9 +709,6 @@
 
             // 4. Animate to target
             // We set the transform to the target coordinates.
-            // Since particle is fixed positioned at 0,0 initially (via top/left in CSS being 0?),
-            // actually we set top:0 left:0 in CSS. 
-            // So translate coordinates are absolute screen coordinates.
             requestAnimationFrame(() => {
                 particle.style.transform = `translate(${targetX}px, ${targetY}px) scale(0.5)`;
                 particle.style.opacity = '0.5';
@@ -573,7 +729,7 @@
          * @param {number} price The price of the product.
          * @param {string} name The name of the product.
          */
-        function addToCart(productId, price, name) {
+        window.addToCart = function(productId, price, name) {
             const product = {
                 id: productId,
                 name: name,
@@ -588,9 +744,7 @@
                 cart.push(product);
             }
             
-            saveCart();
-            // Optional: Commented out the modal to rely on button feedback, or keep both.
-            // showMessageModal(`${name} added to cart!`);
+            window.saveCart();
         }
 
         /**
@@ -598,15 +752,15 @@
          * @param {string} productId 
          * @param {number} change +1 or -1
          */
-        function updateQuantity(productId, change) {
+        window.updateQuantity = function(productId, change) {
             const item = cart.find(item => item.id === productId);
             if (item) {
                 item.quantity += change;
                 if (item.quantity <= 0) {
-                    removeFromCart(productId);
+                    window.removeFromCart(productId);
                 } else {
-                    saveCart();
-                    renderCart();
+                    window.saveCart();
+                    window.renderCart();
                 }
             }
         }
@@ -615,16 +769,16 @@
          * Removes an item from the cart entirely.
          * @param {string} productId 
          */
-        function removeFromCart(productId) {
+        window.removeFromCart = function(productId) {
             cart = cart.filter(item => item.id !== productId);
-            saveCart();
-            renderCart();
+            window.saveCart();
+            window.renderCart();
         }
 
         /**
          * Renders the cart contents inside the modal.
          */
-        function renderCart() {
+        window.renderCart = function() {
             const container = document.getElementById('cart-items-container');
             const totalElement = document.getElementById('cart-total');
             container.innerHTML = '';
@@ -677,8 +831,8 @@
         /**
          * Opens the cart modal.
          */
-        function openCartModal() {
-            renderCart();
+        window.openCartModal = function() {
+            window.renderCart();
             const modal = document.getElementById('cart-modal');
             const modalContent = document.getElementById('cart-modal-content');
             
@@ -691,7 +845,7 @@
         /**
          * Closes the cart modal.
          */
-        function closeCartModal() {
+        window.closeCartModal = function() {
             const modal = document.getElementById('cart-modal');
             const modalContent = document.getElementById('cart-modal-content');
             
@@ -704,26 +858,26 @@
         /**
          * Handles the checkout process.
          */
-        function checkout() {
+        window.checkout = function() {
             if (cart.length === 0) {
-                showMessageModal("Your cart is empty. Please add items before checking out.");
+                window.showMessageModal("Your cart is empty. Please add items before checking out.");
                 return;
             }
             
             const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
             
-            closeCartModal();
-            showMessageModal(`Checkout initiated! Total amount: $${total.toFixed(2)}. (Demo: Payment processing would happen here)`);
+            window.closeCartModal();
+            window.showMessageModal(`Checkout initiated! Total amount: $${total.toFixed(2)}. (Demo: Payment processing would happen here)`);
             
             // Reset cart after hypothetical checkout
             cart = [];
-            saveCart();
+            window.saveCart();
         }
 
         /**
          * Opens the Terms of Service modal.
          */
-        function openTermsModal() {
+        window.openTermsModal = function() {
             const modal = document.getElementById('terms-modal');
             const modalContent = document.getElementById('terms-modal-content');
             
@@ -736,7 +890,7 @@
         /**
          * Closes the Terms of Service modal.
          */
-        function closeTermsModal() {
+        window.closeTermsModal = function() {
             const modal = document.getElementById('terms-modal');
             const modalContent = document.getElementById('terms-modal-content');
             
@@ -749,7 +903,7 @@
         /**
          * Opens the Privacy Policy modal.
          */
-        function openPrivacyModal() {
+        window.openPrivacyModal = function() {
             const modal = document.getElementById('privacy-modal');
             const modalContent = document.getElementById('privacy-modal-content');
             
@@ -762,7 +916,7 @@
         /**
          * Closes the Privacy Policy modal.
          */
-        function closePrivacyModal() {
+        window.closePrivacyModal = function() {
             const modal = document.getElementById('privacy-modal');
             const modalContent = document.getElementById('privacy-modal-content');
             
@@ -778,41 +932,57 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             // Load cart from storage on start
-            loadCart();
+            window.loadCart();
 
             // Attach event listeners to all "Add to Cart" buttons
             // These buttons use data-attributes to store product info
             const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
             
             addToCartButtons.forEach(button => {
+                // Prevent double-tap zoom on mobile
+                button.style.touchAction = 'manipulation'; 
+
                 button.addEventListener('click', function() {
                     const productId = this.getAttribute('data-product-id');
                     const price = this.getAttribute('data-price');
                     const name = this.getAttribute('data-product-name');
                     
                     if (productId && price && name) {
-                        addToCart(productId, price, name);
+                        window.addToCart(productId, price, name);
                         
                         // Trigger flying animation
-                        animateFlyToCart(this);
+                        window.animateFlyToCart(this);
                         
-                        // Visual feedback on button
-                        const originalText = this.innerText;
+                        // Visual feedback on button (Debounced)
+                        
+                        // 1. Store original text if not already stored
+                        if (!this.dataset.originalText) {
+                            this.dataset.originalText = this.innerText;
+                        }
+
+                        // 2. Clear pending reset if exists (prevents "Added!" getting stuck or flipping too early)
+                        if (this.feedbackTimeout) {
+                            clearTimeout(this.feedbackTimeout);
+                        }
+
+                        // 3. Set state to "Added!"
                         this.innerText = "Added!";
                         this.classList.add('bg-white', 'text-accent-green');
                         this.classList.remove('bg-accent-green', 'text-primary-dark');
                         
-                        setTimeout(() => {
-                            this.innerText = originalText;
+                        // 4. Set timer to revert
+                        this.feedbackTimeout = setTimeout(() => {
+                            this.innerText = this.dataset.originalText;
                             this.classList.remove('bg-white', 'text-accent-green');
                             this.classList.add('bg-accent-green', 'text-primary-dark');
+                            this.feedbackTimeout = null;
                         }, 1000);
                     }
                 });
             });
 
             // Update initial cart count in case loadCart didn't fire correctly
-            updateCartCount();
+            window.updateCartCount();
         });
 
     </script>
