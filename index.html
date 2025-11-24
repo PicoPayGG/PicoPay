@@ -15,6 +15,7 @@
                         'primary-dark': '#0a0a0a',
                         'secondary-dark': '#1f2937',
                         'accent-green': '#10b981', // Emerald green for the glow
+                        'accent-yellow': '#eab308', // Yellow for admin actions
                         'text-light': '#f3f4f6',
                     },
                     fontFamily: {
@@ -39,35 +40,60 @@
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.9);
             transform: translateY(-2px);
         }
+        /* Admin specific glow */
+        .admin-glow-button {
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+            transition: box-shadow 0.3s ease-in-out, transform 0.1s ease-in-out;
+        }
+        .admin-glow-button:hover {
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.9);
+            transform: translateY(-2px);
+        }
+
         /* Style for the hidden modal backdrop */
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.8);
             z-index: 60;
+            transition: opacity 0.3s ease;
         }
+        
+        /* Modal Content Animation States */
+        .modal-content-hidden {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-content-visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
         /* Style for the temporary alert bar */
         .alert-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
             transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .alert-bar.hide {
             transform: translateY(-100%);
             opacity: 0;
+        }
+        .alert-bar.show {
+            transform: translateY(0);
+            opacity: 1;
         }
 
         /* Animation for the flying cart particle */
         .fly-item {
             position: fixed;
-            top: 0;
-            left: 0;
+            z-index: 9999;
             width: 20px;
             height: 20px;
             background-color: #10b981;
             border-radius: 50%;
-            z-index: 9999;
             pointer-events: none;
-            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease-in;
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+            transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
         /* Cart shake animation */
@@ -89,18 +115,24 @@
 </head>
 <body class="bg-primary-dark text-text-light font-sans min-h-screen antialiased">
 
+    <!-- Alert Bar (Toast) -->
+    <div id="alert-bar" class="alert-bar bg-accent-green text-primary-dark font-bold text-center py-3 shadow-lg">
+        <span id="alert-message">Action Successful!</span>
+    </div>
+
     <!-- Header & Navigation -->
     <header class="bg-secondary-dark/50 backdrop-blur-sm sticky top-0 z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <!-- Logo Area -->
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 cursor-pointer" onclick="window.scrollTo(0,0)">
                 <!-- Fallback placeholder image used if original URL fails -->
                 <img 
-                    src="image.png" 
-                    onerror="this.onerror=null;this.src='https://placehold.co/150x50/10b981/ffffff?text=PicoPay'" 
-                    alt="PicoPay Logo - Green Glowing P" 
-                    class="h-8 md:h-10 rounded-full"
+                    src="https://placehold.co/150x50/10b981/ffffff?text=P" 
+                    onerror="this.onerror=null;this.src='https://placehold.co/50x50/10b981/ffffff?text=P'" 
+                    alt="PicoPay Logo" 
+                    class="h-10 w-10 rounded-full border-2 border-accent-green"
                 >
+                <span class="text-2xl font-extrabold tracking-tighter hover:text-accent-green transition duration-300">PicoPay</span>
             </div>
             
             <!-- Desktop Navigation -->
@@ -109,15 +141,20 @@
                 <a href="#features" class="nav-link text-text-light hover:text-accent-green transition duration-300">Why Us?</a>
                 <a href="#contact" class="nav-link text-text-light hover:text-accent-green transition duration-300">Contact</a>
                 
+                <!-- Admin Dashboard Button (Hidden by default) -->
+                <button id="admin-dashboard-btn" onclick="openAdminDashboard()" class="hidden text-accent-yellow hover:text-white font-bold border border-accent-yellow/50 rounded-lg px-3 py-1 bg-accent-yellow/10 transition">
+                    Admin Dashboard
+                </button>
+
                 <!-- Desktop Cart Button -->
                 <button id="cart-button-desktop" class="relative p-2 text-text-light hover:text-accent-green transition duration-300" onclick="openCartModal()">
-                    <!-- Shopping Cart Icon (Lucide Icon via inline SVG) -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
-                    <span id="cart-count-desktop" class="absolute -top-1 -right-1 bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    <!-- Shopping Cart Icon -->
+                    <svg id="cart-icon-desktop" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
+                    <span id="cart-count-desktop" class="absolute -top-1 -right-1 bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center scale-0 transition-transform duration-200">0</span>
                 </button>
 
                 <!-- Dynamic Auth Button Desktop -->
-                <button id="auth-btn-desktop" onclick="handleAuthClick()" class="nav-link text-text-light bg-accent-green/10 px-4 py-2 rounded-lg hover:bg-accent-green/30 transition duration-300">
+                <button id="auth-btn-desktop" onclick="handleAuthClick()" class="nav-link text-text-light bg-accent-green/10 px-4 py-2 rounded-lg hover:bg-accent-green/30 transition duration-300 border border-accent-green/20">
                     Sign In
                 </button>
             </nav>
@@ -126,8 +163,8 @@
             <div class="md:hidden flex items-center space-x-4">
                 <!-- Mobile Header Cart Button -->
                 <button id="cart-button-mobile" class="relative p-2 text-text-light hover:text-accent-green transition duration-300" onclick="openCartModal()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
-                    <span id="cart-count-mobile-header" class="absolute -top-1 -right-1 bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    <svg id="cart-icon-mobile" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
+                    <span id="cart-count-mobile-header" class="absolute -top-1 -right-1 bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center scale-0 transition-transform duration-200">0</span>
                 </button>
 
                 <!-- Mobile Menu Button -->
@@ -139,23 +176,28 @@
         </div>
 
         <!-- Mobile Menu (Hidden by default) -->
-        <div id="mobile-menu" class="hidden md:hidden bg-secondary-dark/95 border-t border-accent-green/20">
-            <nav class="flex flex-col space-y-2 p-4">
-                <a href="#products" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300" onclick="toggleMobileMenu()">Products</a>
-                <a href="#features" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300" onclick="toggleMobileMenu()">Why Us?</a>
-                <a href="#contact" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300" onclick="toggleMobileMenu()">Contact</a>
+        <div id="mobile-menu" class="hidden md:hidden bg-secondary-dark/95 border-t border-accent-green/20 absolute w-full left-0 top-full z-[40]">
+            <nav class="flex flex-col space-y-2 p-4 shadow-xl">
+                <!-- Mobile Admin Link (Hidden by default) -->
+                <button id="admin-dashboard-btn-mobile" onclick="openAdminDashboard(); toggleMobileMenu();" class="hidden w-full text-left py-2 px-3 text-accent-yellow bg-accent-yellow/10 rounded-md hover:bg-accent-yellow/20 font-bold transition">
+                    Admin Dashboard
+                </button>
+                
+                <a href="#products" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300 text-text-light" onclick="toggleMobileMenu()">Products</a>
+                <a href="#features" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300 text-text-light" onclick="toggleMobileMenu()">Why Us?</a>
+                <a href="#contact" class="block py-2 px-3 hover:bg-accent-green/20 rounded-md transition duration-300 text-text-light" onclick="toggleMobileMenu()">Contact</a>
                 
                 <!-- Mobile Auth Button -->
-                <button id="auth-btn-mobile" onclick="handleAuthClick(); toggleMobileMenu();" class="w-full text-left py-2 px-3 bg-accent-green/10 rounded-md hover:bg-accent-green/30 transition duration-300">
+                <button id="auth-btn-mobile" onclick="handleAuthClick(); toggleMobileMenu();" class="w-full text-left py-2 px-3 bg-accent-green/10 rounded-md hover:bg-accent-green/30 transition duration-300 text-text-light border border-accent-green/20">
                     Sign In
                 </button>
                 
                 <!-- Mobile Cart Button (Menu Item) -->
-                <button class="w-full py-2 px-3 text-left relative hover:bg-accent-green/20 rounded-md transition duration-300 flex items-center justify-start space-x-2" onclick="openCartModal(); toggleMobileMenu();">
+                <button class="w-full py-2 px-3 text-left relative hover:bg-accent-green/20 rounded-md transition duration-300 flex items-center justify-start space-x-2 text-text-light" onclick="openCartModal(); toggleMobileMenu();">
                     <!-- Shopping Cart Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 12.42a2 2 0 0 0 2 1.58h9.32a2 2 0 0 0 2-1.58L23 6H6"></path></svg>
                     <span>Cart</span>
-                    <span id="cart-count-mobile" class="ml-auto bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    <span id="cart-count-mobile" class="ml-auto bg-red-600 text-xs text-white rounded-full h-5 w-5 flex items-center justify-center scale-0 transition-transform duration-200">0</span>
                 </button>
             </nav>
         </div>
@@ -163,7 +205,6 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <!-- ... existing content ... -->
         
         <!-- Hero Section -->
         <section class="text-center py-12 md:py-24">
@@ -179,86 +220,43 @@
                 </button>
                 <a href="#features" class="glow-button bg-secondary-dark text-text-light border border-accent-green/50 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-secondary-dark/80 transition duration-300 flex items-center justify-center">
                     Learn More
-                    <!-- Arrow Right Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </a>
             </div>
-            <!-- Canvas Demonstration Section removed -->
         </section>
 
-        <!-- Products Section -->
-        <section id="products" class="py-12 md:py-20">
+        <!-- Products Section (DYNAMICALLY RENDERED) -->
+        <section id="products" class="py-12 md:py-20 scroll-mt-24">
             <h2 class="text-3xl sm:text-4xl font-bold mb-10 text-center border-b border-accent-green/50 pb-4">Our Top Deals</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Product Card 1: Game Currency -->
-                <div class="product-card bg-secondary-dark p-6 rounded-xl shadow-xl hover:shadow-accent-green/20 transition duration-300 border border-secondary-dark hover:border-accent-green/50">
-                    <h3 class="text-xl font-bold mb-2 text-accent-green">10,000 Gold Coins</h3>
-                    <p class="text-gray-400 mb-4">The essential currency for every serious player. Instant deposit after purchase.</p>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-3xl font-extrabold text-text-light">$19.99</span>
-                        <span class="text-sm line-through text-gray-500">$29.99</span>
-                    </div>
-                    <button class="add-to-cart-btn w-full glow-button bg-accent-green text-primary-dark font-semibold py-2 rounded-lg" data-product-id="P001" data-price="19.99" data-product-name="10,000 Gold Coins">
-                        Add to Cart
-                    </button>
-                </div>
-
-                <!-- Product Card 2: Subscription -->
-                <div class="product-card bg-secondary-dark p-6 rounded-xl shadow-xl hover:shadow-accent-green/20 transition duration-300 border border-secondary-dark hover:border-accent-green/50">
-                    <h3 class="text-xl font-bold mb-2 text-accent-green">Box Live (12 Months)</h3>
-                    <p class="text-gray-400 mb-4">Access online multiplayer and free games for a full year. Key emailed instantly.</p>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-3xl font-extrabold text-text-light">$49.99</span>
-                        <span class="text-sm line-through text-gray-500">$59.99</span>
-                    </div>
-                    <button class="add-to-cart-btn w-full glow-button bg-accent-green text-primary-dark font-semibold py-2 rounded-lg" data-product-id="P002" data-price="49.99" data-product-name="Box Live (12 Months)">
-                        Add to Cart
-                    </button>
-                </div>
-
-                <!-- Product Card 3: Rare Item -->
-                <div class="product-card bg-secondary-dark p-6 rounded-xl shadow-xl hover:shadow-accent-green/20 transition duration-300 border border-secondary-dark hover:border-accent-green/50">
-                    <h3 class="text-xl font-bold mb-2 text-accent-green">Epic Loot Crate</h3>
-                    <p class="text-gray-400 mb-4">Guaranteed rare item drop. Limited stock available this week!</p>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-3xl font-extrabold text-text-light">$9.99</span>
-                        <span class="text-sm line-through text-gray-500">$14.99</span>
-                    </div>
-                    <button class="add-to-cart-btn w-full glow-button bg-accent-green text-primary-dark font-semibold py-2 rounded-lg" data-product-id="P003" data-price="9.99" data-product-name="Epic Loot Crate">
-                        Add to Cart
-                    </button>
-                </div>
+            <div id="products-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- JavaScript will inject product cards here -->
             </div>
         </section>
 
         <!-- Features Section -->
-        <section id="features" class="py-12 md:py-20">
+        <section id="features" class="py-12 md:py-20 scroll-mt-24">
             <h2 class="text-3xl sm:text-4xl font-bold mb-10 text-center border-b border-accent-green/50 pb-4">Why Choose PicoPay?</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
                 <!-- Feature 1: Speed -->
                 <div class="bg-secondary-dark p-6 rounded-xl shadow-lg border border-accent-green/10">
-                    <!-- Zap Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto mb-3"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                     <h3 class="font-semibold text-xl mb-2 text-text-light">Instant Delivery</h3>
                     <p class="text-gray-400 text-sm">Codes and currency delivered in seconds, not hours.</p>
                 </div>
                 <!-- Feature 2: Price -->
                 <div class="bg-secondary-dark p-6 rounded-xl shadow-lg border border-accent-green/10">
-                    <!-- Dollar Sign Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto mb-3"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     <h3 class="font-semibold text-xl mb-2 text-text-light">Unbeatable Prices</h3>
                     <p class="text-gray-400 text-sm">We guarantee the lowest market rates on all items.</p>
                 </div>
                 <!-- Feature 3: Security -->
                 <div class="bg-secondary-dark p-6 rounded-xl shadow-lg border border-accent-green/10">
-                    <!-- Shield Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto mb-3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                     <h3 class="font-semibold text-xl mb-2 text-text-light">100% Secure</h3>
                     <p class="text-gray-400 text-sm">All transactions are secured with industry-leading encryption.</p>
                 </div>
                 <!-- Feature 4: Support -->
                 <div class="bg-secondary-dark p-6 rounded-xl shadow-lg border border-accent-green/10">
-                    <!-- Headset Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto mb-3"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
                     <h3 class="font-semibold text-xl mb-2 text-text-light">24/7 Support</h3>
                     <p class="text-gray-400 text-sm">Our expert team is always ready to assist you via chat or email.</p>
@@ -267,7 +265,7 @@
         </section>
 
         <!-- Call to Action / Contact Section -->
-        <section id="contact" class="py-12 md:py-20 text-center bg-secondary-dark rounded-xl shadow-2xl mt-12">
+        <section id="contact" class="py-12 md:py-20 text-center bg-secondary-dark rounded-xl shadow-2xl mt-12 border border-accent-green/10">
             <h2 class="text-3xl font-bold mb-4 text-accent-green">Ready to Level Up?</h2>
             <p class="text-lg text-gray-400 max-w-2xl mx-auto mb-8">
                 Join thousands of satisfied gamers who trust PicoPay for their in-game needs. Click below to start saving!
@@ -284,15 +282,15 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-400 text-sm">
             <p>&copy; 2025 PicoPay. All rights reserved.</p>
             <div class="mt-2 space-x-4">
-                <a href="#" class="hover:text-accent-green transition duration-300" onclick="openPrivacyModal()">Privacy Policy</a>
-                <button onclick="openTermsModal()" class="hover:text-accent-green transition duration-300">Terms of Service</button>
+                <button class="hover:text-accent-green transition duration-300 underline" onclick="openPrivacyModal()">Privacy Policy</button>
+                <button onclick="openTermsModal()" class="hover:text-accent-green transition duration-300 underline">Terms of Service</button>
             </div>
         </div>
     </footer>
 
-    <!-- Global Message Box (Custom Modal instead of alert()) -->
-    <div id="message-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100]">
-        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-sm w-full border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="message-modal-content">
+    <!-- Global Message Box (Custom Modal) -->
+    <div id="message-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[110]">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-sm w-full border border-accent-green/50 transform transition-all duration-300 modal-content-hidden" id="message-modal-content">
             <h3 class="text-xl font-bold mb-3 text-accent-green">Notification</h3>
             <p id="modal-message" class="text-text-light mb-6"></p>
             <div class="flex justify-end">
@@ -305,7 +303,7 @@
 
     <!-- Auth Modal (Sign In / Register) -->
     <div id="auth-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100] p-4">
-        <div class="bg-secondary-dark p-8 rounded-xl shadow-2xl max-w-md w-full border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="auth-modal-content">
+        <div class="bg-secondary-dark p-8 rounded-xl shadow-2xl max-w-md w-full border border-accent-green/50 transform transition-all duration-300 modal-content-hidden" id="auth-modal-content">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="auth-title" class="text-2xl font-bold text-accent-green">Sign In</h3>
                 <button class="text-gray-400 hover:text-red-500" onclick="closeAuthModal()">
@@ -335,20 +333,119 @@
         </div>
     </div>
 
-    <!-- Shopping Cart Modal -->
-    <div id="cart-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100]">
-        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-lg w-full border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="cart-modal-content">
-            <div class="flex justify-between items-center mb-4 border-b border-accent-green/50 pb-2">
-                <h3 class="text-2xl font-bold text-accent-green">Your Cart</h3>
-                <button class="text-gray-400 hover:text-red-500" onclick="closeCartModal()">
-                    <!-- X Icon -->
+    <!-- Guest Checkout Modal -->
+    <div id="guest-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[105] p-4">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-sm w-full border border-accent-green/50 transform transition-all duration-300 modal-content-hidden" id="guest-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-accent-green">Guest Checkout</h3>
+                <button class="text-gray-400 hover:text-red-500" onclick="closeGuestModal()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
             
-            <div id="cart-items-container" class="space-y-4 max-h-80 overflow-y-auto pr-2 mb-4">
+            <p class="text-gray-400 text-sm mb-4">Enter your Gamertag to receive your items instantly without an account.</p>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-400 mb-1">Gamertag / Username</label>
+                <input type="text" id="guest-gamertag" class="w-full bg-primary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-green focus:outline-none focus:ring-1 focus:ring-accent-green" placeholder="e.g. ProGamer123">
+                <p id="guest-error" class="text-red-500 text-xs mt-1 hidden">Gamertag is required.</p>
+            </div>
+
+            <button id="guest-checkout-btn" class="w-full glow-button bg-accent-green text-primary-dark font-semibold py-3 rounded-lg shadow-lg hover:bg-green-500 transition duration-300" onclick="handleGuestCheckout()">
+                Continue to Payment
+            </button>
+
+            <div class="mt-4 text-center border-t border-accent-green/20 pt-4">
+                <p class="text-sm text-gray-400 mb-2">Want to save your order history?</p>
+                <button class="text-accent-green hover:underline text-sm font-semibold" onclick="switchToAuthFromGuest()">Sign In / Register</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD MODAL (NEW CENTRAL MANAGEMENT) -->
+    <div id="admin-dashboard-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[110] p-4">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col border border-accent-yellow/50 transform transition-all duration-300 modal-content-hidden" id="admin-dashboard-modal-content">
+            <div class="flex justify-between items-center mb-6 border-b border-accent-yellow/30 pb-3">
+                <h3 class="text-2xl font-bold text-accent-yellow">Product Dashboard</h3>
+                <button class="text-gray-400 hover:text-red-500" onclick="closeAdminDashboard()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            
+            <!-- Product List -->
+            <div class="overflow-y-auto flex-grow">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-primary-dark text-accent-yellow text-sm uppercase">
+                        <tr>
+                            <th class="p-3 rounded-tl-lg">ID</th>
+                            <th class="p-3">Name</th>
+                            <th class="p-3">Price</th>
+                            <th class="p-3 rounded-tr-lg text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-product-list" class="divide-y divide-gray-700 text-sm">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Product Edit Modal -->
+    <div id="admin-product-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[120] p-4">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-md w-full border border-accent-yellow/50 transform transition-all duration-300 modal-content-hidden" id="admin-product-modal-content">
+            <div class="flex justify-between items-center mb-6 border-b border-accent-yellow/30 pb-3">
+                <h3 class="text-xl font-bold text-accent-yellow">Edit Product</h3>
+                <button class="text-gray-400 hover:text-red-500" onclick="closeAdminProductModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            
+            <input type="hidden" id="admin-edit-id">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Product Name</label>
+                    <input type="text" id="admin-edit-name" class="w-full bg-primary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-yellow focus:outline-none focus:ring-1 focus:ring-accent-yellow">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                    <textarea id="admin-edit-desc" rows="3" class="w-full bg-primary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-yellow focus:outline-none focus:ring-1 focus:ring-accent-yellow"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Price ($)</label>
+                        <input type="number" step="0.01" id="admin-edit-price" class="w-full bg-primary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-yellow focus:outline-none focus:ring-1 focus:ring-accent-yellow">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Original Price ($)</label>
+                        <input type="number" step="0.01" id="admin-edit-original-price" class="w-full bg-primary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-yellow focus:outline-none focus:ring-1 focus:ring-accent-yellow">
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button class="text-gray-400 hover:text-white px-4 py-2" onclick="closeAdminProductModal()">Cancel</button>
+                    <button class="admin-glow-button bg-accent-yellow text-primary-dark font-bold px-6 py-2 rounded-lg" onclick="saveProductChanges()">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping Cart Modal -->
+    <div id="cart-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100]">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-lg w-full border border-accent-green/50 transform transition-all duration-300 modal-content-hidden mx-4" id="cart-modal-content">
+            <div class="flex justify-between items-center mb-4 border-b border-accent-green/50 pb-2">
+                <h3 class="text-2xl font-bold text-accent-green">Your Cart</h3>
+                <button class="text-gray-400 hover:text-red-500" onclick="closeCartModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            
+            <div id="cart-items-container" class="space-y-4 max-h-80 overflow-y-auto pr-2 mb-4 scrollbar-thin scrollbar-thumb-accent-green scrollbar-track-secondary-dark">
                 <!-- Cart items will be injected here -->
-                <p id="empty-cart-message" class="text-gray-500 italic">Your cart is empty. Time to shop!</p>
+                <p id="empty-cart-message" class="text-gray-500 italic text-center py-4">Your cart is empty. Time to shop!</p>
             </div>
 
             <div id="cart-summary" class="border-t border-accent-green/50 pt-4">
@@ -356,7 +453,7 @@
                     <span class="text-xl font-bold">Total:</span>
                     <span id="cart-total" class="text-3xl font-extrabold text-accent-green">$0.00</span>
                 </div>
-                <button id="checkout-button" class="w-full glow-button bg-accent-green text-primary-dark font-semibold py-3 rounded-lg shadow-lg hover:bg-green-500 transition duration-300" onclick="checkout()">
+                <button id="checkout-button" class="w-full glow-button bg-accent-green text-primary-dark font-semibold py-3 rounded-lg shadow-lg hover:bg-green-500 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" onclick="checkout()">
                     Proceed to Checkout
                 </button>
             </div>
@@ -365,72 +462,57 @@
     
     <!-- Terms of Service Modal -->
     <div id="terms-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100] p-4">
-        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-3xl w-full h-full max-h-[90vh] flex flex-col border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="terms-modal-content">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-3xl w-full h-full max-h-[80vh] flex flex-col border border-accent-green/50 transform transition-all duration-300 modal-content-hidden" id="terms-modal-content">
             <div class="flex justify-between items-center mb-4 border-b border-accent-green/50 pb-2 flex-shrink-0">
                 <h3 class="text-2xl font-bold text-accent-green">PicoPay - Terms of Service</h3>
                 <button class="text-gray-400 hover:text-red-500" onclick="closeTermsModal()">
-                    <!-- X Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
             
             <div class="overflow-y-auto pr-4 text-sm text-gray-300 flex-grow">
                 <h4 class="text-lg font-bold text-text-light mt-4 mb-2">1. Acceptance of Terms</h4>
-                <p class="mb-4">By accessing or using the PicoPay service ("Service"), you agree to be bound by these Terms of Service ("Terms"), and all terms incorporated herein by reference. If you do not agree to these Terms, you may not access or use the Service.</p>
+                <p class="mb-4">By accessing or using the PicoPay service ("Service"), you agree to be bound by these Terms of Service.</p>
 
                 <h4 class="text-lg font-bold text-text-light mt-4 mb-2">2. Service Description</h4>
-                <p class="mb-4">PicoPay provides a platform for purchasing virtual in-game currency, digital goods, and gaming subscriptions. All purchases are final and non-refundable, unless otherwise specified by our Refund Policy.</p>
+                <p class="mb-4">PicoPay provides a platform for purchasing virtual in-game currency, digital goods, and gaming subscriptions. All purchases are final.</p>
                 
                 <h4 class="text-lg font-bold text-text-light mt-4 mb-2">3. User Obligations</h4>
                 <ul class="list-disc list-inside space-y-2 mb-4">
                     <li>You must be at least 13 years old to use the Service.</li>
                     <li>You agree not to use the Service for any illegal or unauthorized purpose.</li>
-                    <li>You are solely responsible for any data, text, information, usernames, graphics, images, profiles, audio, video, items, and links ("Content") that you submit, post, and display on the Service.</li>
                 </ul>
 
                 <h4 class="text-lg font-bold text-text-light mt-4 mb-2">4. Digital Goods & Delivery</h4>
-                <p class="mb-4">All digital goods (including in-game currency and codes) are delivered electronically and instantly upon successful payment verification. Delivery times are estimated and PicoPay is not liable for delays caused by third-party payment processors or external game server issues.</p>
+                <p class="mb-4">All digital goods are delivered electronically instantly upon successful payment verification.</p>
 
-                <h4 class="text-lg font-bold text-text-light mt-4 mb-2">5. Termination</h4>
-                <p class="mb-4">PicoPay reserves the right to terminate or suspend your account and access to the Service at our sole discretion, without notice, for conduct that we believe violates these Terms or is harmful to other users of the Service, us, or third parties, or for any other reason.</p>
-
-                <h4 class="text-lg font-bold text-text-light mt-4 mb-2">6. Limitation of Liability</h4>
-                <p class="mb-4">PicoPay and its affiliates will not be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the Service; (ii) any conduct or content of any third party on the Service.</p>
-
-                <h4 class="text-lg font-bold text-text-light mt-4 mb-2">7. Governing Law</h4>
-                <p class="mb-4">These Terms shall be governed by the laws of the jurisdiction where PicoPay is headquartered, without regard to its conflict of law provisions.</p>
-                
                 <p class="pt-4 text-center text-gray-500 italic">Last Updated: November 24, 2025</p>
+            </div>
+            <div class="mt-4 pt-2 border-t border-accent-green/20 text-right">
+                <button class="bg-accent-green text-primary-dark font-semibold px-4 py-2 rounded-lg hover:bg-green-500 transition duration-300" onclick="closeTermsModal()">Close</button>
             </div>
         </div>
     </div>
 
     <!-- Privacy Policy Modal -->
     <div id="privacy-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-[100] p-4">
-        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-3xl w-full h-full max-h-[90vh] flex flex-col border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="privacy-modal-content">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-3xl w-full h-full max-h-[80vh] flex flex-col border border-accent-green/50 transform transition-all duration-300 modal-content-hidden" id="privacy-modal-content">
             <div class="flex justify-between items-center mb-4 border-b border-accent-green/50 pb-2 flex-shrink-0">
                 <h3 class="text-2xl font-bold text-accent-green">PicoPay - Privacy Policy</h3>
                 <button class="text-gray-400 hover:text-red-500" onclick="closePrivacyModal()">
-                    <!-- X Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
             
             <div class="overflow-y-auto pr-4 text-sm text-gray-300 flex-grow">
                 <h4 class="text-lg font-bold text-text-light mt-4 mb-2">1. Information Collection</h4>
-                <p class="mb-4">We collect information you provide directly to us, such as when you create an account, make a purchase, or communicate with us. This may include your name, email address, and payment information.</p>
+                <p class="mb-4">We collect information you provide directly to us, such as when you create an account.</p>
 
                 <h4 class="text-lg font-bold text-text-light mt-4 mb-2">2. Use of Information</h4>
-                <p class="mb-4">We use the information we collect to provide, maintain, and improve our services, process transactions, and send you related information, including confirmations and receipts.</p>
+                <p class="mb-4">We use the information we collect to provide, maintain, and improve our services.</p>
                 
                 <h4 class="text-lg font-bold text-text-light mt-4 mb-2">3. Data Security</h4>
-                <p class="mb-4">We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
-
-                <h4 class="text-lg font-bold text-text-light mt-4 mb-2">4. Cookies</h4>
-                <p class="mb-4">We use cookies and similar tracking technologies to track the activity on our Service and hold certain information to improve your experience.</p>
-
-                <h4 class="text-lg font-bold text-text-light mt-4 mb-2">5. Third-Party Services</h4>
-                <p class="mb-4">Our Service may contain links to third-party web sites or services that are not owned or controlled by PicoPay. We have no control over, and assume no responsibility for, the content, privacy policies, or practices of any third-party web sites or services.</p>
+                <p class="mb-4">We implement appropriate security measures to protect your personal information.</p>
 
                 <p class="pt-4 text-center text-gray-500 italic">Last Updated: November 24, 2025</p>
             </div>
@@ -443,437 +525,580 @@
         </div>
     </div>
 
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // --- State Management ---
+        let cart = [];
+        let isLoggedIn = false;
+        let isAdmin = false; // ADMIN FLAG
+        let authMode = 'login'; // 'login' or 'register'
 
-    <!-- JavaScript logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // Global State
-        let auth = null;
-        let currentUser = null;
-        let isRegistering = false;
-        let cart = []; // Cart State
-
-        // ------------------------------------------------------------------
-        // UI FUNCTIONS (Defined early to prevent blocking)
-        // ------------------------------------------------------------------
-        
-        // --- Shopping Cart Functions ---
-        
-        window.loadCart = function() {
-            const saved = localStorage.getItem('picopay_cart');
-            if (saved) {
-                try {
-                    cart = JSON.parse(saved);
-                    window.updateCartCount();
-                } catch (e) {
-                    console.error("Failed to load cart", e);
-                    cart = [];
-                }
+        // --- Product Data (Dynamic for Editing) ---
+        // Initializing with default products
+        let products = [
+            { 
+                id: 'P001', 
+                name: '10,000 Gold Coins', 
+                price: 19.99, 
+                originalPrice: 29.99, 
+                desc: 'The essential currency for every serious player. Instant deposit after purchase.' 
+            },
+            { 
+                id: 'P002', 
+                name: 'Box Live (12 Months)', 
+                price: 49.99, 
+                originalPrice: 59.99, 
+                desc: 'Access online multiplayer and free games for a full year. Key emailed instantly.' 
+            },
+            { 
+                id: 'P003', 
+                name: 'Epic Loot Crate', 
+                price: 9.99, 
+                originalPrice: 14.99, 
+                desc: 'Guaranteed rare item drop. Limited stock available this week!' 
             }
+        ];
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+        });
+
+        // --- Product Rendering Logic ---
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = ''; // Clear existing content
+
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = "product-card bg-secondary-dark p-6 rounded-xl shadow-xl hover:shadow-accent-green/20 transition duration-300 border border-secondary-dark hover:border-accent-green/50 flex flex-col h-full relative";
+                
+                // Admin Edit Button Overlay on Card
+                let adminControls = '';
+                if (isAdmin) {
+                    // Using onclick with ID directly (ensure IDs are simple strings)
+                    adminControls = `
+                        <button onclick="openAdminProductModal('${product.id}')" class="absolute top-4 right-4 bg-accent-yellow text-primary-dark font-bold text-xs px-2 py-1 rounded hover:bg-yellow-400 transition z-10 shadow-lg">
+                            EDIT
+                        </button>
+                    `;
+                }
+
+                card.innerHTML = `
+                    ${adminControls}
+                    <h3 class="text-xl font-bold mb-2 text-accent-green">${product.name}</h3>
+                    <p class="text-gray-400 mb-4 flex-grow">${product.desc}</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-3xl font-extrabold text-text-light">$${product.price.toFixed(2)}</span>
+                        ${product.originalPrice ? `<span class="text-sm line-through text-gray-500">$${product.originalPrice.toFixed(2)}</span>` : ''}
+                    </div>
+                    <button class="add-to-cart-btn w-full glow-button bg-accent-green text-primary-dark font-semibold py-2 rounded-lg" onclick="addToCart(this)" data-id="${product.id}" data-price="${product.price}" data-name="${product.name}">
+                        Add to Cart
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
         }
 
-        window.saveCart = function() {
-            localStorage.setItem('picopay_cart', JSON.stringify(cart));
-            window.updateCartCount();
+        // --- Utility Functions ---
+        function formatPrice(price) {
+            return '$' + parseFloat(price).toFixed(2);
         }
 
-        window.updateCartCount = function() {
-            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-            const desktopCount = document.getElementById('cart-count-desktop');
-            const mobileCount = document.getElementById('cart-count-mobile');
-            const mobileHeaderCount = document.getElementById('cart-count-mobile-header');
+        // --- Alert / Toast System ---
+        function showAlert(message) {
+            const bar = document.getElementById('alert-bar');
+            const msg = document.getElementById('alert-message');
+            msg.textContent = message;
+            bar.classList.add('show');
+            setTimeout(() => {
+                bar.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Generic Modal Logic ---
+        function openModal(modalId, contentId) {
+            const modal = document.getElementById(modalId);
+            const content = document.getElementById(contentId);
             
-            if(desktopCount) desktopCount.textContent = count;
-            if(mobileCount) mobileCount.textContent = count;
-            if(mobileHeaderCount) mobileHeaderCount.textContent = count;
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('modal-content-hidden');
+                content.classList.add('modal-content-visible');
+            }, 10);
+        }
+
+        function closeModal(modalId, contentId) {
+            const modal = document.getElementById(modalId);
+            const content = document.getElementById(contentId);
             
-            // Animate badges
-            const badges = [desktopCount, mobileCount, mobileHeaderCount];
-            badges.forEach(badge => {
-                if(badge) {
-                    badge.classList.remove('scale-100');
-                    badge.classList.add('scale-125');
-                    setTimeout(() => {
-                        badge.classList.remove('scale-125');
-                        badge.classList.add('scale-100');
-                    }, 200);
-                }
-            });
-        }
-
-        window.addToCart = function(productId, price, name) {
-            const product = {
-                id: productId,
-                name: name,
-                price: parseFloat(price),
-                quantity: 1
-            };
-
-            const existingItem = cart.find(item => item.id === productId);
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cart.push(product);
-            }
-            window.saveCart();
-        }
-
-        window.updateQuantity = function(productId, change) {
-            const item = cart.find(item => item.id === productId);
-            if (item) {
-                item.quantity += change;
-                if (item.quantity <= 0) {
-                    window.removeFromCart(productId);
-                } else {
-                    window.saveCart();
-                    window.renderCart();
-                }
-            }
-        }
-
-        window.removeFromCart = function(productId) {
-            cart = cart.filter(item => item.id !== productId);
-            window.saveCart();
-            window.renderCart();
-        }
-
-        window.renderCart = function() {
-            const container = document.getElementById('cart-items-container');
-            const totalElement = document.getElementById('cart-total');
-            container.innerHTML = '';
-            
-            if (cart.length === 0) {
-                container.innerHTML = '<p id="empty-cart-message" class="text-gray-500 italic">Your cart is empty. Time to shop!</p>';
-                totalElement.textContent = '$0.00';
-                const checkoutBtn = document.getElementById('checkout-button');
-                if(checkoutBtn) {
-                    checkoutBtn.disabled = true;
-                    checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-                return;
-            }
-
-            let total = 0;
-            cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                total += itemTotal;
-                const itemHtml = `
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-primary-dark/50 rounded-lg gap-2">
-                        <div class="flex-1">
-                            <span class="font-medium block text-text-light">${item.name}</span>
-                            <span class="text-xs text-gray-400">$${item.price.toFixed(2)} each</span>
-                        </div>
-                        <div class="flex items-center space-x-3 bg-secondary-dark rounded px-2 py-1">
-                            <button onclick="updateQuantity('${item.id}', -1)" class="text-gray-400 hover:text-white transition w-6 h-6 flex items-center justify-center font-bold">-</button>
-                            <span class="text-sm font-semibold w-4 text-center">${item.quantity}</span>
-                            <button onclick="updateQuantity('${item.id}', 1)" class="text-gray-400 hover:text-white transition w-6 h-6 flex items-center justify-center font-bold">+</button>
-                        </div>
-                        <div class="flex items-center space-x-4 ml-0 sm:ml-4 w-full sm:w-auto justify-between sm:justify-end mt-2 sm:mt-0">
-                            <span class="text-accent-green font-semibold w-20 text-right">$${itemTotal.toFixed(2)}</span>
-                            <button onclick="removeFromCart('${item.id}')" class="text-gray-500 hover:text-red-500 transition" title="Remove Item">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </div>
-                    </div>`;
-                container.innerHTML += itemHtml;
-            });
-
-            totalElement.textContent = `$${total.toFixed(2)}`;
-            const checkoutBtn = document.getElementById('checkout-button');
-            if(checkoutBtn) {
-                checkoutBtn.disabled = false;
-                checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-        }
-
-        window.openCartModal = function() {
-            window.renderCart();
-            const modal = document.getElementById('cart-modal');
-            const modalContent = document.getElementById('cart-modal-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
-        }
-
-        window.closeCartModal = function() {
-            const modal = document.getElementById('cart-modal');
-            const modalContent = document.getElementById('cart-modal-content');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-        }
-
-        window.checkout = function() {
-            if (cart.length === 0) {
-                window.showMessageModal("Your cart is empty. Please add items before checking out.");
-                return;
-            }
-            const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            window.closeCartModal();
-            window.showMessageModal(`Checkout initiated! Total amount: $${total.toFixed(2)}. (Demo: Payment processing would happen here)`);
-            cart = [];
-            window.saveCart();
-        }
-
-        // --- Navigation & UI Functions ---
-
-        window.toggleMobileMenu = function() {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        window.scrollToElement = function(id) {
-            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
-        }
-
-        window.showMessageModal = function(message) {
-            const modal = document.getElementById('message-modal');
-            const modalContent = document.getElementById('message-modal-content');
-            document.getElementById('modal-message').textContent = message;
-            modal.classList.remove('hidden');
-            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
-        }
-
-        window.closeMessageModal = function() {
-            const modal = document.getElementById('message-modal');
-            const modalContent = document.getElementById('message-modal-content');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-        }
-
-        window.openTermsModal = function() {
-            const modal = document.getElementById('terms-modal');
-            const modalContent = document.getElementById('terms-modal-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
-        }
-
-        window.closeTermsModal = function() {
-            const modal = document.getElementById('terms-modal');
-            const modalContent = document.getElementById('terms-modal-content');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-        }
-
-        window.openPrivacyModal = function() {
-            const modal = document.getElementById('privacy-modal');
-            const modalContent = document.getElementById('privacy-modal-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
-        }
-
-        window.closePrivacyModal = function() {
-            const modal = document.getElementById('privacy-modal');
-            const modalContent = document.getElementById('privacy-modal-content');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-        }
-        
-        // --- Animation Functions ---
-
-        window.animateFlyToCart = function(btnElement) {
-            const particle = document.createElement('div');
-            particle.classList.add('fly-item');
-            const rect = btnElement.getBoundingClientRect();
-            const startX = rect.left + rect.width / 2 - 10;
-            const startY = rect.top + rect.height / 2 - 10;
-            particle.style.transform = `translate(${startX}px, ${startY}px)`;
-            document.body.appendChild(particle);
-            particle.offsetHeight; // force reflow
-
-            const cartDesktop = document.getElementById('cart-button-desktop');
-            const cartMobile = document.getElementById('cart-button-mobile');
-            // If desktop cart is hidden (mobile view), target mobile cart
-            let target = (cartDesktop.offsetParent === null) ? cartMobile : cartDesktop;
-            if(!target) target = cartMobile; // fallback
-
-            const targetRect = target.getBoundingClientRect();
-            const targetX = targetRect.left + targetRect.width / 2 - 10;
-            const targetY = targetRect.top + targetRect.height / 2 - 10;
-
-            requestAnimationFrame(() => {
-                particle.style.transform = `translate(${targetX}px, ${targetY}px) scale(0.5)`;
-                particle.style.opacity = '0.5';
-            });
-            particle.addEventListener('transitionend', () => {
-                particle.remove();
-                target.classList.add('cart-shake');
-                setTimeout(() => target.classList.remove('cart-shake'), 400);
-            });
-        }
-
-        // --- Auth Functions ---
-
-        window.handleAuthClick = function() {
-            if (!auth) {
-                window.showMessageModal("Authentication is currently initializing or unavailable. Please try again in a moment.");
-                return;
-            }
-            if (currentUser) {
-                signOut(auth).then(() => {
-                    window.showMessageModal("You have been signed out.");
-                }).catch((error) => {
-                    window.showMessageModal("Error signing out: " + error.message);
-                });
-            } else {
-                window.openAuthModal();
-            }
-        }
-
-        window.openAuthModal = function() {
-            const modal = document.getElementById('auth-modal');
-            const modalContent = document.getElementById('auth-modal-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
-        }
-
-        window.closeAuthModal = function() {
-            const modal = document.getElementById('auth-modal');
-            const modalContent = document.getElementById('auth-modal-content');
-            modalContent.classList.add('scale-95', 'opacity-0');
+            content.classList.remove('modal-content-visible');
+            content.classList.add('modal-content-hidden');
             setTimeout(() => {
                 modal.classList.add('hidden');
-                document.getElementById('auth-email').value = '';
-                document.getElementById('auth-password').value = '';
             }, 300);
         }
 
-        window.toggleAuthMode = function() {
-            isRegistering = !isRegistering;
-            const title = document.getElementById('auth-title');
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const toggleText = document.getElementById('auth-toggle-text');
-            const toggleBtn = document.getElementById('auth-toggle-btn');
-            if (isRegistering) {
-                title.textContent = "Create Account";
-                submitBtn.textContent = "Register";
-                toggleText.textContent = "Already have an account?";
-                toggleBtn.textContent = "Sign In";
-            } else {
-                title.textContent = "Sign In";
-                submitBtn.textContent = "Sign In";
-                toggleText.textContent = "Don't have an account?";
-                toggleBtn.textContent = "Register";
+        // Modal Specific Wrappers
+        function openMessageModal(message) {
+            document.getElementById('modal-message').textContent = message;
+            openModal('message-modal', 'message-modal-content');
+        }
+        function closeMessageModal() { closeModal('message-modal', 'message-modal-content'); }
+
+        function openTermsModal() { openModal('terms-modal', 'terms-modal-content'); }
+        function closeTermsModal() { closeModal('terms-modal', 'terms-modal-content'); }
+
+        function openPrivacyModal() { openModal('privacy-modal', 'privacy-modal-content'); }
+        function closePrivacyModal() { closeModal('privacy-modal', 'privacy-modal-content'); }
+
+        function openCartModal() { 
+            renderCart();
+            openModal('cart-modal', 'cart-modal-content'); 
+        }
+        function closeCartModal() { closeModal('cart-modal', 'cart-modal-content'); }
+
+        // --- Admin Dashboard Logic (NEW) ---
+        function openAdminDashboard() {
+            renderAdminProductList();
+            openModal('admin-dashboard-modal', 'admin-dashboard-modal-content');
+        }
+
+        function closeAdminDashboard() {
+            closeModal('admin-dashboard-modal', 'admin-dashboard-modal-content');
+        }
+
+        function renderAdminProductList() {
+            const tbody = document.getElementById('admin-product-list');
+            tbody.innerHTML = '';
+
+            products.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-primary-dark/30';
+                tr.innerHTML = `
+                    <td class="p-3 text-gray-400 font-mono text-xs">${p.id}</td>
+                    <td class="p-3 font-medium text-text-light">${p.name}</td>
+                    <td class="p-3 text-accent-green">$${p.price.toFixed(2)}</td>
+                    <td class="p-3 text-right">
+                        <button onclick="openAdminProductModal('${p.id}')" class="text-accent-yellow hover:text-white text-sm font-bold underline">
+                            Edit
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- Admin Product Editing Logic ---
+        function openAdminProductModal(productId) {
+            // If opening from dashboard, we might want to close dashboard temporarily or keep it open behind.
+            // For simplicity, we open on top (z-index 120 vs 110).
+            
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            // Populate Form
+            document.getElementById('admin-edit-id').value = product.id;
+            document.getElementById('admin-edit-name').value = product.name;
+            document.getElementById('admin-edit-desc').value = product.desc;
+            document.getElementById('admin-edit-price').value = product.price;
+            document.getElementById('admin-edit-original-price').value = product.originalPrice || '';
+
+            openModal('admin-product-modal', 'admin-product-modal-content');
+        }
+
+        function closeAdminProductModal() {
+            closeModal('admin-product-modal', 'admin-product-modal-content');
+        }
+
+        function saveProductChanges() {
+            const id = document.getElementById('admin-edit-id').value;
+            const name = document.getElementById('admin-edit-name').value;
+            const desc = document.getElementById('admin-edit-desc').value;
+            
+            // Critical: Ensure these are numbers
+            const price = parseFloat(document.getElementById('admin-edit-price').value);
+            const originalPriceInput = document.getElementById('admin-edit-original-price').value;
+            const originalPrice = originalPriceInput ? parseFloat(originalPriceInput) : null;
+
+            // Find and Update
+            const index = products.findIndex(p => p.id === id);
+            if (index !== -1) {
+                // Update product data
+                products[index] = { 
+                    ...products[index], 
+                    name, 
+                    desc, 
+                    price: isNaN(price) ? 0 : price, 
+                    originalPrice: isNaN(originalPrice) ? null : originalPrice 
+                };
+
+                // Refresh UI
+                renderProducts(); // Updates the main store grid
+                renderAdminProductList(); // Updates the dashboard table if open
+                closeAdminProductModal();
+                showAlert("Product updated successfully!");
+                
+                // Update cart items if they exist to reflect new price/name
+                cart = cart.map(item => {
+                    if (item.id === id) {
+                        return { ...item, name, price: products[index].price };
+                    }
+                    return item;
+                });
+                updateCartCounts(); 
             }
         }
 
-        window.handleAuthSubmit = function() {
-            if(!auth) {
-                 window.showMessageModal("Authentication is unavailable.");
-                 return;
-            }
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            if (!email || !password) {
-                window.showMessageModal("Please enter both email and password.");
+        // --- Guest Checkout Logic ---
+        function openGuestModal() {
+            document.getElementById('guest-gamertag').value = '';
+            document.getElementById('guest-error').classList.add('hidden');
+            openModal('guest-modal', 'guest-modal-content');
+        }
+        function closeGuestModal() { closeModal('guest-modal', 'guest-modal-content'); }
+
+        function handleGuestCheckout() {
+            const gamertagInput = document.getElementById('guest-gamertag');
+            const errorMsg = document.getElementById('guest-error');
+            const gamertag = gamertagInput.value.trim();
+
+            if (!gamertag) {
+                errorMsg.classList.remove('hidden');
+                gamertagInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+                gamertagInput.classList.remove('focus:ring-accent-green', 'focus:border-accent-green');
                 return;
             }
-            if (isRegistering) {
-                createUserWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        window.closeAuthModal();
-                        window.showMessageModal("Account created successfully! Welcome.");
-                    })
-                    .catch((error) => {
-                        window.showMessageModal("Registration Error: " + error.message);
-                    });
+
+            errorMsg.classList.add('hidden');
+            gamertagInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+            gamertagInput.classList.add('focus:ring-accent-green', 'focus:border-accent-green');
+
+            const btn = document.getElementById('guest-checkout-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                closeGuestModal();
+                btn.textContent = originalText;
+                btn.disabled = false;
+                finalizeTransaction(gamertag);
+            }, 800);
+        }
+
+        function switchToAuthFromGuest() {
+            closeGuestModal();
+            setTimeout(() => {
+                openModal('auth-modal', 'auth-modal-content');
+            }, 300);
+        }
+
+        // --- Auth Logic ---
+        function handleAuthClick() {
+            if (isLoggedIn) {
+                // Sign Out
+                isLoggedIn = false;
+                isAdmin = false;
+                
+                // Hide Admin UI
+                document.getElementById('admin-dashboard-btn').classList.add('hidden');
+                document.getElementById('admin-dashboard-btn-mobile').classList.add('hidden');
+                
+                renderProducts(); // Remove admin buttons from cards
+                updateAuthUI();
+                showAlert("Signed out successfully.");
             } else {
-                signInWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        window.closeAuthModal();
-                        window.showMessageModal("Welcome back!");
-                    })
-                    .catch((error) => {
-                        window.showMessageModal("Login Error: " + error.message);
-                    });
+                openModal('auth-modal', 'auth-modal-content');
             }
         }
-        
-        function updateAuthUI(user) {
+
+        function closeAuthModal() {
+            closeModal('auth-modal', 'auth-modal-content');
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
+        }
+
+        function toggleAuthMode() {
+            authMode = authMode === 'login' ? 'register' : 'login';
+            const title = document.getElementById('auth-title');
+            const btn = document.getElementById('auth-submit-btn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+
+            if (authMode === 'register') {
+                title.textContent = 'Create Account';
+                btn.textContent = 'Register';
+                toggleText.textContent = 'Already have an account?';
+                toggleBtn.textContent = 'Sign In';
+            } else {
+                title.textContent = 'Sign In';
+                btn.textContent = 'Sign In';
+                toggleText.textContent = "Don't have an account?";
+                toggleBtn.textContent = 'Register';
+            }
+        }
+
+        function handleAuthSubmit() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (!email || !password) {
+                const content = document.getElementById('auth-modal-content');
+                content.classList.add('animate-pulse');
+                setTimeout(() => content.classList.remove('animate-pulse'), 500);
+                return;
+            }
+
+            // ADMIN CHECK
+            if (email === 'Jakeciocca1@gmail.com' && password === 'PicoAdmin2025') {
+                isAdmin = true;
+                isLoggedIn = true;
+                closeAuthModal();
+                updateAuthUI();
+                
+                // Show Admin UI
+                document.getElementById('admin-dashboard-btn').classList.remove('hidden');
+                document.getElementById('admin-dashboard-btn-mobile').classList.remove('hidden');
+                
+                renderProducts(); // Re-render to show edit buttons on cards
+                showAlert("Admin Mode Activated!");
+                return;
+            }
+
+            // Normal User Flow
+            setTimeout(() => {
+                isLoggedIn = true;
+                closeAuthModal();
+                updateAuthUI();
+                showAlert(authMode === 'login' ? "Welcome back!" : "Account created successfully!");
+            }, 500);
+        }
+
+        function updateAuthUI() {
             const desktopBtn = document.getElementById('auth-btn-desktop');
             const mobileBtn = document.getElementById('auth-btn-mobile');
-            if (user) {
-                const btnText = `Sign Out (${user.email.split('@')[0]})`;
-                if(desktopBtn) desktopBtn.innerText = btnText;
-                if(mobileBtn) mobileBtn.innerText = btnText;
-            } else {
-                if(desktopBtn) desktopBtn.innerText = "Sign In";
-                if(mobileBtn) mobileBtn.innerText = "Sign In";
-            }
-        }
-
-        // ------------------------------------------------------------------
-        // FIREBASE INIT (Wrapped in Try/Catch to prevent crash)
-        // ------------------------------------------------------------------
-        try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-            const firebaseConfig = JSON.parse(firebaseConfigString);
             
-            // Basic validation to avoid immediate crash on empty config
-            if (Object.keys(firebaseConfig).length > 0) {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
+            if (isLoggedIn) {
+                desktopBtn.textContent = isAdmin ? 'Admin Logout' : 'Sign Out';
+                desktopBtn.classList.add('bg-red-500/10', 'hover:bg-red-500/30');
+                desktopBtn.classList.remove('bg-accent-green/10', 'hover:bg-accent-green/30');
                 
-                onAuthStateChanged(auth, (user) => {
-                    currentUser = user;
-                    updateAuthUI(user);
-                });
+                mobileBtn.textContent = isAdmin ? 'Admin Logout' : 'Sign Out';
             } else {
-                console.warn("Firebase config is empty. Auth disabled, but site remains functional.");
+                desktopBtn.textContent = 'Sign In';
+                desktopBtn.classList.remove('bg-red-500/10', 'hover:bg-red-500/30');
+                desktopBtn.classList.add('bg-accent-green/10', 'hover:bg-accent-green/30');
+                
+                mobileBtn.textContent = 'Sign In';
             }
-        } catch (e) {
-            console.error("Firebase Initialization Error:", e);
         }
 
-        // ------------------------------------------------------------------
-        // DOM LOAD
-        // ------------------------------------------------------------------
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load cart from storage on start
-            window.loadCart();
+        // --- Cart Logic ---
+        function addToCart(btn) {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            const price = parseFloat(btn.getAttribute('data-price'));
 
-            // Attach event listeners to all "Add to Cart" buttons
-            const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+            const existingItem = cart.find(item => item.id === id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ id, name, price, quantity: 1 });
+            }
+
+            animateFlyToCart(btn);
+            updateCartCounts();
+            // Note: Alert removed to show particle
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            renderCart();
+            updateCartCounts();
+        }
+
+        function updateQuantity(id, change) {
+            const item = cart.find(item => item.id === id);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    removeFromCart(id);
+                } else {
+                    renderCart();
+                    updateCartCounts();
+                }
+            }
+        }
+
+        function updateCartCounts() {
+            const count = cart.reduce((total, item) => total + item.quantity, 0);
+            const desktopBadge = document.getElementById('cart-count-desktop');
+            const mobileHeaderBadge = document.getElementById('cart-count-mobile-header');
+            const mobileMenuBadge = document.getElementById('cart-count-mobile');
+
+            [desktopBadge, mobileHeaderBadge, mobileMenuBadge].forEach(el => {
+                el.textContent = count;
+                if (count > 0) {
+                    el.classList.remove('scale-0');
+                } else {
+                    el.classList.add('scale-0');
+                }
+            });
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const totalEl = document.getElementById('cart-total');
+            const checkoutBtn = document.getElementById('checkout-button');
+
+            container.innerHTML = '';
             
-            addToCartButtons.forEach(button => {
-                // Prevent double-tap zoom on mobile
-                button.style.touchAction = 'manipulation'; 
+            if (cart.length === 0) {
+                container.innerHTML = '<p id="empty-cart-message" class="text-gray-500 italic text-center py-4">Your cart is empty. Time to shop!</p>';
+                totalEl.textContent = '$0.00';
+                checkoutBtn.disabled = true;
+                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
 
-                button.addEventListener('click', function() {
-                    const productId = this.getAttribute('data-product-id');
-                    const price = this.getAttribute('data-price');
-                    const name = this.getAttribute('data-product-name');
-                    
-                    if (productId && price && name) {
-                        window.addToCart(productId, price, name);
-                        window.animateFlyToCart(this);
-                        
-                        // Visual feedback on button (Debounced)
-                        if (!this.dataset.originalText) {
-                            this.dataset.originalText = this.innerText;
-                        }
-                        if (this.feedbackTimeout) {
-                            clearTimeout(this.feedbackTimeout);
-                        }
-                        this.innerText = "Added!";
-                        this.classList.add('bg-white', 'text-accent-green');
-                        this.classList.remove('bg-accent-green', 'text-primary-dark');
-                        
-                        this.feedbackTimeout = setTimeout(() => {
-                            this.innerText = this.dataset.originalText;
-                            this.classList.remove('bg-white', 'text-accent-green');
-                            this.classList.add('bg-accent-green', 'text-primary-dark');
-                            this.feedbackTimeout = null;
-                        }, 1000);
-                    }
-                });
+            checkoutBtn.disabled = false;
+            checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            let total = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-center bg-primary-dark/50 p-3 rounded-lg border border-gray-700';
+                itemDiv.innerHTML = `
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm text-text-light">${item.name}</h4>
+                        <p class="text-xs text-gray-400">${formatPrice(item.price)} each</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center bg-secondary-dark rounded-lg">
+                            <button onclick="updateQuantity('${item.id}', -1)" class="px-2 py-1 text-gray-400 hover:text-white">-</button>
+                            <span class="text-sm font-bold w-4 text-center">${item.quantity}</span>
+                            <button onclick="updateQuantity('${item.id}', 1)" class="px-2 py-1 text-gray-400 hover:text-white">+</button>
+                        </div>
+                        <button onclick="removeFromCart('${item.id}')" class="text-red-500 hover:text-red-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
             });
 
-            // Update initial cart count
-            window.updateCartCount();
-        });
+            totalEl.textContent = formatPrice(total);
+        }
 
+        function checkout() {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            if (total <= 0) {
+                showAlert("Your cart is empty.");
+                return;
+            }
+
+            closeCartModal();
+
+            if (isLoggedIn) {
+                finalizeTransaction();
+            } else {
+                setTimeout(() => {
+                    openGuestModal();
+                }, 300);
+            }
+        }
+
+        function finalizeTransaction(gamertag = null) {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            let message = "Redirecting to PayPal...";
+            if (gamertag) message = `Processing for guest: ${gamertag}. Redirecting...`;
+            showAlert(message);
+
+            setTimeout(() => {
+                const paypalUrl = `https://www.paypal.com/paypalme/Peanzyi/${total.toFixed(2)}`;
+                window.open(paypalUrl, '_blank');
+                cart = []; 
+                updateCartCounts();
+                let successMsg = `Redirected to PayPal for payment of $${total.toFixed(2)}!`;
+                if(gamertag) successMsg += ` (Gamertag: ${gamertag})`;
+                openMessageModal(successMsg);
+            }, 1000);
+        }
+
+        // --- Animations ---
+        function animateFlyToCart(startElement) {
+            const mobileBtn = document.getElementById('cart-button-mobile');
+            const desktopBtn = document.getElementById('cart-button-desktop');
+            
+            let targetBtn = null;
+            if (desktopBtn && desktopBtn.getBoundingClientRect().width > 0) {
+                targetBtn = desktopBtn;
+            } else if (mobileBtn && mobileBtn.getBoundingClientRect().width > 0) {
+                targetBtn = mobileBtn;
+            }
+
+            if (!targetBtn) return;
+            const targetIcon = targetBtn.querySelector('svg');
+            const fly = document.createElement('div');
+            fly.className = 'fly-item';
+            document.body.appendChild(fly);
+
+            const startRect = startElement.getBoundingClientRect();
+            const targetRect = targetBtn.getBoundingClientRect();
+
+            const startX = startRect.left + (startRect.width / 2);
+            const startY = startRect.top + (startRect.height / 2);
+            const targetX = targetRect.left + (targetRect.width / 2);
+            const targetY = targetRect.top + (targetRect.height / 2);
+
+            fly.style.left = (startX - 10) + 'px';
+            fly.style.top = (startY - 10) + 'px';
+
+            void fly.offsetHeight;
+            const deltaX = targetX - startX;
+            const deltaY = targetY - startY;
+
+            fly.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.2)`;
+            fly.style.opacity = '0.5';
+
+            setTimeout(() => {
+                fly.remove();
+                if (targetIcon) {
+                    targetIcon.classList.add('cart-shake');
+                    setTimeout(() => targetIcon.classList.remove('cart-shake'), 400);
+                }
+            }, 800);
+        }
+
+        // --- Navigation Logic ---
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+
+        function scrollToElement(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-backdrop')) {
+                const modalId = event.target.id;
+                const contentId = modalId + '-content';
+                closeModal(modalId, contentId);
+            }
+        }
     </script>
 </body>
 </html>
