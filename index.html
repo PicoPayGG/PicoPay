@@ -259,7 +259,7 @@
                 <!-- Feature 4: Support -->
                 <div class="bg-secondary-dark p-6 rounded-xl shadow-lg border border-accent-green/10">
                     <!-- Headset Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto mb-3"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto mb-3"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
                     <h3 class="font-semibold text-xl mb-2 text-text-light">24/7 Support</h3>
                     <p class="text-gray-400 text-sm">Our expert team is always ready to assist you via chat or email.</p>
                 </div>
@@ -449,136 +449,18 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // ------------------------------------------------------------------
-        // FIREBASE SETUP
-        // ------------------------------------------------------------------
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-        const firebaseConfig = JSON.parse(firebaseConfigString);
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        // Auth State
+        // Global State
+        let auth = null;
         let currentUser = null;
         let isRegistering = false;
-
-        // Monitor Auth State
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            updateAuthUI(user);
-        });
-
-        function updateAuthUI(user) {
-            const desktopBtn = document.getElementById('auth-btn-desktop');
-            const mobileBtn = document.getElementById('auth-btn-mobile');
-            
-            if (user) {
-                const btnText = `Sign Out (${user.email.split('@')[0]})`;
-                if(desktopBtn) desktopBtn.innerText = btnText;
-                if(mobileBtn) mobileBtn.innerText = btnText;
-            } else {
-                if(desktopBtn) desktopBtn.innerText = "Sign In";
-                if(mobileBtn) mobileBtn.innerText = "Sign In";
-            }
-        }
-
-        // Make functions global for HTML onclick attributes
-        window.handleAuthClick = function() {
-            if (currentUser) {
-                // User is signed in, so sign out
-                signOut(auth).then(() => {
-                    showMessageModal("You have been signed out.");
-                }).catch((error) => {
-                    showMessageModal("Error signing out: " + error.message);
-                });
-            } else {
-                // User is not signed in, open modal
-                window.openAuthModal();
-            }
-        }
-
-        window.openAuthModal = function() {
-            const modal = document.getElementById('auth-modal');
-            const modalContent = document.getElementById('auth-modal-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-            }, 10);
-        }
-
-        window.closeAuthModal = function() {
-            const modal = document.getElementById('auth-modal');
-            const modalContent = document.getElementById('auth-modal-content');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                // Reset fields
-                document.getElementById('auth-email').value = '';
-                document.getElementById('auth-password').value = '';
-            }, 300);
-        }
-
-        window.toggleAuthMode = function() {
-            isRegistering = !isRegistering;
-            const title = document.getElementById('auth-title');
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const toggleText = document.getElementById('auth-toggle-text');
-            const toggleBtn = document.getElementById('auth-toggle-btn');
-
-            if (isRegistering) {
-                title.textContent = "Create Account";
-                submitBtn.textContent = "Register";
-                toggleText.textContent = "Already have an account?";
-                toggleBtn.textContent = "Sign In";
-            } else {
-                title.textContent = "Sign In";
-                submitBtn.textContent = "Sign In";
-                toggleText.textContent = "Don't have an account?";
-                toggleBtn.textContent = "Register";
-            }
-        }
-
-        window.handleAuthSubmit = function() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-
-            if (!email || !password) {
-                showMessageModal("Please enter both email and password.");
-                return;
-            }
-
-            if (isRegistering) {
-                createUserWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        window.closeAuthModal();
-                        showMessageModal("Account created successfully! Welcome.");
-                    })
-                    .catch((error) => {
-                        showMessageModal("Registration Error: " + error.message);
-                    });
-            } else {
-                signInWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        window.closeAuthModal();
-                        showMessageModal("Welcome back!");
-                    })
-                    .catch((error) => {
-                        showMessageModal("Login Error: " + error.message);
-                    });
-            }
-        }
+        let cart = []; // Cart State
 
         // ------------------------------------------------------------------
-        // APP LOGIC
+        // UI FUNCTIONS (Defined early to prevent blocking)
         // ------------------------------------------------------------------
         
-        // Data structure for the shopping cart
-        let cart = [];
-
-        /**
-         * Loads cart from LocalStorage on initialization.
-         */
+        // --- Shopping Cart Functions ---
+        
         window.loadCart = function() {
             const saved = localStorage.getItem('picopay_cart');
             if (saved) {
@@ -592,61 +474,11 @@
             }
         }
 
-        /**
-         * Saves current cart to LocalStorage.
-         */
         window.saveCart = function() {
             localStorage.setItem('picopay_cart', JSON.stringify(cart));
             window.updateCartCount();
         }
 
-        /**
-         * Shows a custom message modal (replacing alert()).
-         * @param {string} message The message to display.
-         */
-        window.showMessageModal = function(message) {
-            const modal = document.getElementById('message-modal');
-            const modalContent = document.getElementById('message-modal-content');
-            document.getElementById('modal-message').textContent = message;
-            
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-            }, 10);
-        }
-
-        /**
-         * Closes the custom message modal.
-         */
-        window.closeMessageModal = function() {
-            const modal = document.getElementById('message-modal');
-            const modalContent = document.getElementById('message-modal-content');
-            
-            modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        }
-
-        /**
-         * Toggles the mobile navigation menu visibility.
-         */
-        window.toggleMobileMenu = function() {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        /**
-         * Scrolls to a specific element on the page.
-         * @param {string} id The ID of the element to scroll to.
-         */
-        window.scrollToElement = function(id) {
-            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
-        }
-
-        /**
-         * Updates the cart count displayed on the header buttons.
-         */
         window.updateCartCount = function() {
             const count = cart.reduce((sum, item) => sum + item.quantity, 0);
             const desktopCount = document.getElementById('cart-count-desktop');
@@ -659,7 +491,6 @@
             
             // Animate badges
             const badges = [desktopCount, mobileCount, mobileHeaderCount];
-            
             badges.forEach(badge => {
                 if(badge) {
                     badge.classList.remove('scale-100');
@@ -672,63 +503,6 @@
             });
         }
 
-        /**
-         * Animates a particle flying from the button to the cart icon.
-         * @param {HTMLElement} btnElement The button that was clicked.
-         */
-        window.animateFlyToCart = function(btnElement) {
-            // 1. Create particle
-            const particle = document.createElement('div');
-            particle.classList.add('fly-item');
-            
-            // 2. Get start position (center of button)
-            const rect = btnElement.getBoundingClientRect();
-            const startX = rect.left + rect.width / 2 - 10; // -10 for half particle width
-            const startY = rect.top + rect.height / 2 - 10;
-            
-            particle.style.transform = `translate(${startX}px, ${startY}px)`;
-            document.body.appendChild(particle);
-
-            // Force reflow
-            particle.offsetHeight;
-
-            // 3. Get target position (desktop or mobile)
-            const cartDesktop = document.getElementById('cart-button-desktop');
-            const cartMobile = document.getElementById('cart-button-mobile');
-            
-            // Check visibility to decide target
-            // If desktop cart has offsetParent, it's visible. Otherwise use mobile.
-            let target = cartDesktop.offsetParent ? cartDesktop : cartMobile;
-            
-            // Fallback
-            if (!target) target = cartDesktop;
-
-            const targetRect = target.getBoundingClientRect();
-            const targetX = targetRect.left + targetRect.width / 2 - 10;
-            const targetY = targetRect.top + targetRect.height / 2 - 10;
-
-            // 4. Animate to target
-            // We set the transform to the target coordinates.
-            requestAnimationFrame(() => {
-                particle.style.transform = `translate(${targetX}px, ${targetY}px) scale(0.5)`;
-                particle.style.opacity = '0.5';
-            });
-
-            // 5. Cleanup
-            particle.addEventListener('transitionend', () => {
-                particle.remove();
-                // Shake the target cart icon
-                target.classList.add('cart-shake');
-                setTimeout(() => target.classList.remove('cart-shake'), 400);
-            });
-        }
-
-        /**
-         * Adds a product to the cart.
-         * @param {string} productId The ID of the product.
-         * @param {number} price The price of the product.
-         * @param {string} name The name of the product.
-         */
         window.addToCart = function(productId, price, name) {
             const product = {
                 id: productId,
@@ -743,15 +517,9 @@
             } else {
                 cart.push(product);
             }
-            
             window.saveCart();
         }
 
-        /**
-         * Updates the quantity of an item in the cart.
-         * @param {string} productId 
-         * @param {number} change +1 or -1
-         */
         window.updateQuantity = function(productId, change) {
             const item = cart.find(item => item.id === productId);
             if (item) {
@@ -765,19 +533,12 @@
             }
         }
 
-        /**
-         * Removes an item from the cart entirely.
-         * @param {string} productId 
-         */
         window.removeFromCart = function(productId) {
             cart = cart.filter(item => item.id !== productId);
             window.saveCart();
             window.renderCart();
         }
 
-        /**
-         * Renders the cart contents inside the modal.
-         */
         window.renderCart = function() {
             const container = document.getElementById('cart-items-container');
             const totalElement = document.getElementById('cart-total');
@@ -787,155 +548,292 @@
                 container.innerHTML = '<p id="empty-cart-message" class="text-gray-500 italic">Your cart is empty. Time to shop!</p>';
                 totalElement.textContent = '$0.00';
                 const checkoutBtn = document.getElementById('checkout-button');
-                checkoutBtn.disabled = true;
-                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                if(checkoutBtn) {
+                    checkoutBtn.disabled = true;
+                    checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
                 return;
             }
 
             let total = 0;
-
             cart.forEach(item => {
                 const itemTotal = item.price * item.quantity;
                 total += itemTotal;
-
                 const itemHtml = `
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-primary-dark/50 rounded-lg gap-2">
                         <div class="flex-1">
                             <span class="font-medium block text-text-light">${item.name}</span>
                             <span class="text-xs text-gray-400">$${item.price.toFixed(2)} each</span>
                         </div>
-                        
                         <div class="flex items-center space-x-3 bg-secondary-dark rounded px-2 py-1">
                             <button onclick="updateQuantity('${item.id}', -1)" class="text-gray-400 hover:text-white transition w-6 h-6 flex items-center justify-center font-bold">-</button>
                             <span class="text-sm font-semibold w-4 text-center">${item.quantity}</span>
                             <button onclick="updateQuantity('${item.id}', 1)" class="text-gray-400 hover:text-white transition w-6 h-6 flex items-center justify-center font-bold">+</button>
                         </div>
-
                         <div class="flex items-center space-x-4 ml-0 sm:ml-4 w-full sm:w-auto justify-between sm:justify-end mt-2 sm:mt-0">
                             <span class="text-accent-green font-semibold w-20 text-right">$${itemTotal.toFixed(2)}</span>
                             <button onclick="removeFromCart('${item.id}')" class="text-gray-500 hover:text-red-500 transition" title="Remove Item">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             </button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 container.innerHTML += itemHtml;
             });
 
             totalElement.textContent = `$${total.toFixed(2)}`;
             const checkoutBtn = document.getElementById('checkout-button');
-            checkoutBtn.disabled = false;
-            checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if(checkoutBtn) {
+                checkoutBtn.disabled = false;
+                checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }
 
-        /**
-         * Opens the cart modal.
-         */
         window.openCartModal = function() {
             window.renderCart();
             const modal = document.getElementById('cart-modal');
             const modalContent = document.getElementById('cart-modal-content');
-            
             modal.classList.remove('hidden');
-            setTimeout(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-            }, 10);
+            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
         }
 
-        /**
-         * Closes the cart modal.
-         */
         window.closeCartModal = function() {
             const modal = document.getElementById('cart-modal');
             const modalContent = document.getElementById('cart-modal-content');
-            
             modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
-        /**
-         * Handles the checkout process.
-         */
         window.checkout = function() {
             if (cart.length === 0) {
                 window.showMessageModal("Your cart is empty. Please add items before checking out.");
                 return;
             }
-            
             const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            
             window.closeCartModal();
             window.showMessageModal(`Checkout initiated! Total amount: $${total.toFixed(2)}. (Demo: Payment processing would happen here)`);
-            
-            // Reset cart after hypothetical checkout
             cart = [];
             window.saveCart();
         }
 
-        /**
-         * Opens the Terms of Service modal.
-         */
+        // --- Navigation & UI Functions ---
+
+        window.toggleMobileMenu = function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        window.scrollToElement = function(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        window.showMessageModal = function(message) {
+            const modal = document.getElementById('message-modal');
+            const modalContent = document.getElementById('message-modal-content');
+            document.getElementById('modal-message').textContent = message;
+            modal.classList.remove('hidden');
+            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
+        }
+
+        window.closeMessageModal = function() {
+            const modal = document.getElementById('message-modal');
+            const modalContent = document.getElementById('message-modal-content');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
         window.openTermsModal = function() {
             const modal = document.getElementById('terms-modal');
             const modalContent = document.getElementById('terms-modal-content');
-            
             modal.classList.remove('hidden');
-            setTimeout(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-            }, 10);
+            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
         }
 
-        /**
-         * Closes the Terms of Service modal.
-         */
         window.closeTermsModal = function() {
             const modal = document.getElementById('terms-modal');
             const modalContent = document.getElementById('terms-modal-content');
-            
             modalContent.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
-        /**
-         * Opens the Privacy Policy modal.
-         */
         window.openPrivacyModal = function() {
             const modal = document.getElementById('privacy-modal');
             const modalContent = document.getElementById('privacy-modal-content');
-            
             modal.classList.remove('hidden');
-            setTimeout(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-            }, 10);
+            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
         }
 
-        /**
-         * Closes the Privacy Policy modal.
-         */
         window.closePrivacyModal = function() {
             const modal = document.getElementById('privacy-modal');
             const modalContent = document.getElementById('privacy-modal-content');
-            
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+        
+        // --- Animation Functions ---
+
+        window.animateFlyToCart = function(btnElement) {
+            const particle = document.createElement('div');
+            particle.classList.add('fly-item');
+            const rect = btnElement.getBoundingClientRect();
+            const startX = rect.left + rect.width / 2 - 10;
+            const startY = rect.top + rect.height / 2 - 10;
+            particle.style.transform = `translate(${startX}px, ${startY}px)`;
+            document.body.appendChild(particle);
+            particle.offsetHeight; // force reflow
+
+            const cartDesktop = document.getElementById('cart-button-desktop');
+            const cartMobile = document.getElementById('cart-button-mobile');
+            // If desktop cart is hidden (mobile view), target mobile cart
+            let target = (cartDesktop.offsetParent === null) ? cartMobile : cartDesktop;
+            if(!target) target = cartMobile; // fallback
+
+            const targetRect = target.getBoundingClientRect();
+            const targetX = targetRect.left + targetRect.width / 2 - 10;
+            const targetY = targetRect.top + targetRect.height / 2 - 10;
+
+            requestAnimationFrame(() => {
+                particle.style.transform = `translate(${targetX}px, ${targetY}px) scale(0.5)`;
+                particle.style.opacity = '0.5';
+            });
+            particle.addEventListener('transitionend', () => {
+                particle.remove();
+                target.classList.add('cart-shake');
+                setTimeout(() => target.classList.remove('cart-shake'), 400);
+            });
+        }
+
+        // --- Auth Functions ---
+
+        window.handleAuthClick = function() {
+            if (!auth) {
+                window.showMessageModal("Authentication is currently initializing or unavailable. Please try again in a moment.");
+                return;
+            }
+            if (currentUser) {
+                signOut(auth).then(() => {
+                    window.showMessageModal("You have been signed out.");
+                }).catch((error) => {
+                    window.showMessageModal("Error signing out: " + error.message);
+                });
+            } else {
+                window.openAuthModal();
+            }
+        }
+
+        window.openAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modalContent.classList.remove('scale-95', 'opacity-0'); }, 10);
+        }
+
+        window.closeAuthModal = function() {
+            const modal = document.getElementById('auth-modal');
+            const modalContent = document.getElementById('auth-modal-content');
             modalContent.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
                 modal.classList.add('hidden');
+                document.getElementById('auth-email').value = '';
+                document.getElementById('auth-password').value = '';
             }, 300);
         }
 
-        // -----------------------------------------------------------------
-        // Initializer
-        // -----------------------------------------------------------------
+        window.toggleAuthMode = function() {
+            isRegistering = !isRegistering;
+            const title = document.getElementById('auth-title');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            if (isRegistering) {
+                title.textContent = "Create Account";
+                submitBtn.textContent = "Register";
+                toggleText.textContent = "Already have an account?";
+                toggleBtn.textContent = "Sign In";
+            } else {
+                title.textContent = "Sign In";
+                submitBtn.textContent = "Sign In";
+                toggleText.textContent = "Don't have an account?";
+                toggleBtn.textContent = "Register";
+            }
+        }
+
+        window.handleAuthSubmit = function() {
+            if(!auth) {
+                 window.showMessageModal("Authentication is unavailable.");
+                 return;
+            }
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            if (!email || !password) {
+                window.showMessageModal("Please enter both email and password.");
+                return;
+            }
+            if (isRegistering) {
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        window.closeAuthModal();
+                        window.showMessageModal("Account created successfully! Welcome.");
+                    })
+                    .catch((error) => {
+                        window.showMessageModal("Registration Error: " + error.message);
+                    });
+            } else {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        window.closeAuthModal();
+                        window.showMessageModal("Welcome back!");
+                    })
+                    .catch((error) => {
+                        window.showMessageModal("Login Error: " + error.message);
+                    });
+            }
+        }
         
+        function updateAuthUI(user) {
+            const desktopBtn = document.getElementById('auth-btn-desktop');
+            const mobileBtn = document.getElementById('auth-btn-mobile');
+            if (user) {
+                const btnText = `Sign Out (${user.email.split('@')[0]})`;
+                if(desktopBtn) desktopBtn.innerText = btnText;
+                if(mobileBtn) mobileBtn.innerText = btnText;
+            } else {
+                if(desktopBtn) desktopBtn.innerText = "Sign In";
+                if(mobileBtn) mobileBtn.innerText = "Sign In";
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // FIREBASE INIT (Wrapped in Try/Catch to prevent crash)
+        // ------------------------------------------------------------------
+        try {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+            const firebaseConfig = JSON.parse(firebaseConfigString);
+            
+            // Basic validation to avoid immediate crash on empty config
+            if (Object.keys(firebaseConfig).length > 0) {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    updateAuthUI(user);
+                });
+            } else {
+                console.warn("Firebase config is empty. Auth disabled, but site remains functional.");
+            }
+        } catch (e) {
+            console.error("Firebase Initialization Error:", e);
+        }
+
+        // ------------------------------------------------------------------
+        // DOM LOAD
+        // ------------------------------------------------------------------
         document.addEventListener('DOMContentLoaded', () => {
             // Load cart from storage on start
             window.loadCart();
 
             // Attach event listeners to all "Add to Cart" buttons
-            // These buttons use data-attributes to store product info
             const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
             
             addToCartButtons.forEach(button => {
@@ -949,28 +847,19 @@
                     
                     if (productId && price && name) {
                         window.addToCart(productId, price, name);
-                        
-                        // Trigger flying animation
                         window.animateFlyToCart(this);
                         
                         // Visual feedback on button (Debounced)
-                        
-                        // 1. Store original text if not already stored
                         if (!this.dataset.originalText) {
                             this.dataset.originalText = this.innerText;
                         }
-
-                        // 2. Clear pending reset if exists (prevents "Added!" getting stuck or flipping too early)
                         if (this.feedbackTimeout) {
                             clearTimeout(this.feedbackTimeout);
                         }
-
-                        // 3. Set state to "Added!"
                         this.innerText = "Added!";
                         this.classList.add('bg-white', 'text-accent-green');
                         this.classList.remove('bg-accent-green', 'text-primary-dark');
                         
-                        // 4. Set timer to revert
                         this.feedbackTimeout = setTimeout(() => {
                             this.innerText = this.dataset.originalText;
                             this.classList.remove('bg-white', 'text-accent-green');
@@ -981,7 +870,7 @@
                 });
             });
 
-            // Update initial cart count in case loadCart didn't fire correctly
+            // Update initial cart count
             window.updateCartCount();
         });
 
