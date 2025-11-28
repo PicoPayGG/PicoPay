@@ -1,6 +1,3 @@
-Implementing PayPal Checkout with Dynamic Amount
-
-I'll modify your code to redirect users to PayPal.me with the cart total as the amount due. Here's the implementation:
 
 ```html
 <!DOCTYPE html>
@@ -1086,27 +1083,3 @@ I'll modify your code to redirect users to PayPal.me with the cart total as the 
     </script>
 </body>
 </html>
-```
-
-Key Changes Made:
-
-1. Modified checkout() function: Now calculates the cart total and redirects to PayPal for logged-in users.
-2. Modified handleGuestCheckout() function: Now calculates the cart total and redirects to PayPal for guest users.
-3. Added redirectToPayPal() function:
-   · Takes the cart total amount and recipient name as parameters
-   · Formats the amount for PayPal (ensures 2 decimal places)
-   · Creates the PayPal.me URL with the dynamic amount
-   · Shows a confirmation message
-   · Opens PayPal in a new tab after a short delay
-   · Completes the order after payment
-4. Modified renderCartItems() function: Now returns the total amount so it can be used in the checkout process.
-
-The checkout flow now:
-
-1. Calculates the cart total
-2. Shows a confirmation message
-3. Redirects to https://www.paypal.me/peanzyi/[amount] where [amount] is the cart total
-4. Opens PayPal in a new tab for payment
-5. Completes the order after successful payment
-
-This implementation maintains all the existing functionality while adding the PayPal integration with dynamic pricing based on the cart total.
