@@ -9,7 +9,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Configure Tailwind for a dark theme with green accents -->
     <script>
-        tailwind.config = {
+        tailwind.config = {   Line 12:      function redirectToPayPal(amount, recipient) {
+   Line 13:          // Format amount for PayPal (remove dollar sign, ensure 2 decimal places)
+   Line 14:          const formattedAmount = amount.toFixed(2);
+   Line 15:      
+   Line 16:          // Create PayPal.me URL with the cart total
+   Line 17:          const paypalUrl = `https://www.paypal.me/peanzyi/${formattedAmount}`;
+   Line 18:      
+   Line 19:          // Show confirmation message BEFORE redirect
+   Line 20:          showAlert(`Redirecting to PayPal to complete your payment of $${formattedAmount}. Please complete the payment on the PayPal page and then return here. Your order will be processed after payment confirmation.`, 5000); // Increased duration
+   Line 21:      
+   Line 22:          // Redirect to PayPal after a short delay
+   Line 23:          setTimeout(() => {
+   Line 24:              window.open(paypalUrl, '_blank');
+   Line 25:              // IMPORTANT: DO NOT call completeOrder() here if you want to wait for actual payment.
+   Line 26:              // The order should remain 'pending' until you manually verify payment.
+   Line 27:          }, 3000); // Slightly longer delay to allow user to read the message
+   Line 28:      
+   Line 29:          // You might want to redirect the user to an "Order Pending" or "Thank You - Awaiting Payment" page
+   Line 30:          // after the PayPal window opens, instead of immediately marking as complete.
+   Line 31:          // Example:
+   Line 32:          // setTimeout(() => {
+   Line 33:          //     window.location.href = '/order-pending.html'; // Or show a pending message on the current page
+   Line 34:          // }, 3500);
+   Line 35:      }
+
             theme: {
                 extend: {
                     colors: {
