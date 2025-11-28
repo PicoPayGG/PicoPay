@@ -1,6 +1,7 @@
+/* checkout.css */
 body {
-    background-color: #0a0a0a;
-    color: #f3f4f6;
+    background-color: #0a0a0a; /* primary-dark */
+    color: #f3f4f6; /* text-light */
 }
 
 .bg-primary-dark {
@@ -11,14 +12,59 @@ body {
     background-color: #1f2937;
 }
 
-.text-text-light {
-    color: #f3f4f6;
-}
-
 .text-accent-green {
     color: #10b981;
 }
 
+.bg-accent-green {
+    background-color: #10b981;
+}
+
+.hover\:bg-green-500:hover {
+    background-color: #22c55e;
+}
+
 .border-gray-700 {
     border-color: #374151;
+}
+
+.focus\:border-accent-green:focus {
+    border-color: #10b981;
+}
+
+.focus\:ring-accent-green:focus {
+    --tw-ring-color: #10b981;
+}
+
+/* Stripe Elements Custom Styling */
+.StripeElement {
+  box-sizing: border-box;
+  height: 48px; /* Adjusted height for better fit with existing inputs */
+  padding: 10px 12px;
+  border: 1px solid #374151; /* border-gray-700 */
+  border-radius: 0.5rem; /* rounded-lg */
+  background-color: #0a0a0a; /* primary-dark */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm */
+  -webkit-transition: all 150ms ease;
+  transition: all 150ms ease;
+  color: #f3f4f6; /* text-light */
+}
+
+.StripeElement--focus {
+  box-shadow: 0 0 0 1px #10b981, 0 0 0 4px rgba(16, 185, 129, 0.3); /* focus:ring-1 focus:ring-accent-green */
+  border-color: #10b981; /* focus:border-accent-green */
+  background-color: #1f2937; /* secondary-dark */
+}
+
+.StripeElement--invalid {
+  border-color: #ef4444; /* red-500 */
+}
+
+.StripeElement--webkit-autofill {
+  background-color: #2d3748 !important; /* Darker autofill background */
+}
+
+/* Placeholder styling for better contrast */
+.StripeElement ::placeholder {
+    color: #9ca3af; /* gray-400 */
 }
