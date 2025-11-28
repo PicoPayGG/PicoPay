@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicoPay | Checkout</title>
+    <link rel="stylesheet" href="checkout.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#0a0a0a',
+                        'secondary-dark': '#1f2937',
+                        'accent-green': '#10b981',
+                        'accent-yellow': '#eab308',
+                        'text-light': '#f3f4f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-primary-dark text-text-light font-sans min-h-screen antialiased flex flex-col items-center py-10">
+
+    <div class="container max-w-3xl bg-secondary-dark rounded-xl shadow-2xl p-8 border border-accent-green/50">
+        <h1 class="text-4xl font-extrabold text-center text-accent-green mb-8">Secure Checkout</h1>
+
+        <!-- Order Summary -->
+        <section class="mb-8 p-6 bg-primary-dark rounded-lg border border-gray-700">
+            <h2 class="text-2xl font-bold mb-4 text-text-light">Order Summary</h2>
+            <div id="checkout-items-container" class="space-y-3 mb-4">
+                <!-- Checkout items will be injected here via JS -->
+            </div>
+            <div class="border-t border-gray-600 pt-4 flex justify-between items-center">
+                <span class="text-xl font-bold">Total:</span>
+                <span id="checkout-total" class="text-3xl font-extrabold text-accent-green">$0.00</span>
+            </div>
+        </section>
+
+        <!-- Delivery Information -->
+        <section class="mb-8 p-6 bg-primary-dark rounded-lg border border-gray-700">
+            <h2 class="text-2xl font-bold mb-4 text-text-light">Delivery Information</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="delivery-email" class="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                    <input type="email" id="delivery-email" class="w-full bg-secondary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-green focus:outline-none focus:ring-1 focus:ring-accent-green" placeholder="your@example.com" required>
+                </div>
+                <div>
+                    <label for="delivery-gamertag" class="block text-sm font-medium text-gray-400 mb-1">Gamertag / Username</label>
+                    <input type="text" id="delivery-gamertag" class="w-full bg-secondary-dark border border-gray-700 rounded-lg px-4 py-2 text-text-light focus:border-accent-green focus:outline-none focus:ring-1 focus:ring-accent-green" placeholder="e.g. ProGamer123 (for in-game delivery)" required>
+                </div>
+                <p id="delivery-error" class="text-red-500 text-sm hidden">Please fill in all delivery details correctly.</p>
+            </div>
+        </section>
+
+        <!-- Payment Method -->
+        <section class="mb-8 p-6 bg-primary-dark rounded-lg border border-gray-700">
+            <h2 class="text-2xl font-bold mb-4 text-text-light">Payment Method</h2>
+            <div class="space-y-4">
+                <div class="flex items-center">
+                    <input type="radio" id="payment-paypal" name="payment-method" value="paypal" class="h-4 w-4 text-accent-green focus:ring-accent-green border-gray-300" checked>
+                    <label for="payment-paypal" class="ml-3 block text-lg font-medium text-text-light">PayPal</label>
+                </div>
+                <!-- You can add other payment methods here if needed -->
+            </div>
+        </section>
+
+        <button id="place-order-button" class="w-full glow-button bg-accent-green text-primary-dark font-semibold py-4 rounded-lg shadow-lg hover:bg-green-500 transition duration-300 text-xl" onclick="placeOrder()">
+            Place Order
+        </button>
+
+        <p class="text-center text-gray-500 text-sm mt-6">By placing your order, you agree to our <a href="terms.html" class="text-accent-green hover:underline">Terms of Service</a> and <a href="privacy.html" class="text-accent-green hover:underline">Privacy Policy</a>.</p>
+    </div>
+
+    <!-- Global Message Box (Custom Modal) - for alerts -->
+    <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[110]">
+        <div class="bg-secondary-dark p-6 rounded-xl shadow-2xl max-w-sm w-full border border-accent-green/50 transform transition-all duration-300 scale-95 opacity-0" id="message-modal-content">
+            <h3 class="text-xl font-bold mb-3 text-accent-green">Notification</h3>
+            <p id="modal-message" class="text-text-light mb-6"></p>
+            <div class="flex justify-end">
+                <button class="bg-accent-green text-primary-dark font-semibold px-4 py-2 rounded-lg hover:bg-green-500 transition duration-300" onclick="closeMessageModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = JSON.parse(localStorage.getItem('picopay_cart')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('picopay_user')) || null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCheckoutItems();
+            if (currentUser) {
+                document.getElementById('delivery-email').value = currentUser.email;
+            }
+        });
+
+        function renderCheckoutItems() {
+            const container = document.getElementById('checkout-items-container');
+            const totalEl = document.getElementById('checkout-total');
+            container.innerHTML = '';
+            let total = 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic text-center py-4">Your cart is empty. Please go back to the <a href="index.html" class="text-accent-green hover:underline">homepage</a> to add items.</p>';
+                document.getElementById('place-order-button').disabled = true;
+                document.getElementById('place-order-button').classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex justify-between items-center';
+                    itemEl.innerHTML = `
+                        <span class="text-gray-300">${item.name} x ${item.quantity}</span>
+                        <span class="font-medium">$${itemTotal.toFixed(2)}</span>
+                    `;
+                    container.appendChild(itemEl);
+                });
+                document.getElementById('place-order-button').disabled = false;
+                document.getElementById('place-order-button').classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            totalEl.textContent = `$${total.toFixed(2)}`;
+        }
+
+        function placeOrder() {
+            const emailInput = document.getElementById('delivery-email');
+            const gamertagInput = document.getElementById('delivery-gamertag');
+            const errorEl = document.getElementById('delivery-error');
+            const placeOrderBtn = document.getElementById('place-order-button');
+
+            const email = emailInput.value.trim();
+            const gamertag = gamertagInput.value.trim();
+
+            if (!email || !gamertag) {
+                errorEl.textContent = "Email and Gamertag are required.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            // Basic email validation
+            if (!/\S+@\S+\.\S+/.test(email)) {
+                errorEl.textContent = "Please enter a valid email address.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+             // Gamertag validation: Cannot start with a number
+            if (/^\\d/.test(gamertag)) {
+                errorEl.innerText = "Gamertag cannot start with a number.";
+                errorEl.classList.remove(\'hidden\');
+                return;
+            }
+
+            // Regex validation: Allow Alphanumeric, Underscore, Hyphen, AND Dot
+            const validChars = /^[a-zA-Z0-9_.-]+$/;
+            if (!validChars.test(gamertag)) {
+                errorEl.innerText = "Gamertag can only contain letters, numbers, underscores (_), hyphens (-), and dots (.).";
+                errorEl.classList.remove(\'hidden\');
+                return;
+            }
+
+            errorEl.classList.add('hidden'); // Hide error if validation passes
+
+            // Disable button and show loading
+            placeOrderBtn.disabled = true;
+            placeOrderBtn.textContent = 'Processing...';
+            placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const totalAmount = parseFloat(document.getElementById('checkout-total').textContent.replace('$', ''));
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+
+            if (paymentMethod === 'paypal') {
+                redirectToPayPal(totalAmount, email, gamertag);
+            } else {
+                showAlert('Selected payment method is not currently supported.');
+                placeOrderBtn.disabled = false;
+                placeOrderBtn.textContent = 'Place Order';
+                placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function redirectToPayPal(amount, email, gamertag) {
+            const formattedAmount = amount.toFixed(2);
+            const paypalUrl = `https://www.paypal.me/peanzyi/${formattedAmount}`;
+            
+            showAlert(`Redirecting to PayPal to complete your payment of $${formattedAmount}...`, 2000);
+
+            setTimeout(() => {
+                window.open(paypalUrl, '_blank');
+                completeOrder(email, gamertag);
+            }, 2000);
+        }
+
+        function completeOrder(email, gamertag) {
+            showAlert(`Payment initiated. Finalizing order for ${gamertag} and sending details to ${email}...`, 3000);
+
+            setTimeout(() => {
+                cart = [];
+                localStorage.removeItem('picopay_cart');
+                // You might want to clear user's local storage cart here or mark order as complete in a backend
+                showAlert(`Order Complete! Your items for Gamertag: ${gamertag} have been processed. A confirmation will be sent to ${email}.`, 5000);
+                
+                // Redirect back to homepage or an order confirmation page
+                setTimeout(() => {
+                    window.location.href = 'index.html'; 
+                }, 5000);
+            }, 3000);
+        }
+
+        // Modal Helpers for showAlert
+        function openModal(modal, content) {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal(modal, content) {
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function openMessageModal(text) {
+            document.getElementById('modal-message').innerText = text;
+            openModal(document.getElementById('message-modal'), document.getElementById('message-modal-content'));
+        }
+
+        function closeMessageModal() {
+            closeModal(document.getElementById('message-modal'), document.getElementById('message-modal-content'));
+        }
+
+        function showAlert(message, duration = 0) {
+            openMessageModal(message);
+            if (duration > 0) {
+                setTimeout(() => {
+                    closeMessageModal();
+                }, duration);
+            }
+        }
+    </script>
+</body>
+</html>
